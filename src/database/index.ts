@@ -2,6 +2,7 @@ import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 
 const databaseUrl = process.env.DATABASE_URL;
+console.log("Database URL:", databaseUrl);
 if (!databaseUrl) {
     throw new Error("DATABASE_URL is not set in environment variables.");
 }
