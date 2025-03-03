@@ -1,11 +1,17 @@
--- Active: 1734506594209@@127.0.0.1@3306@Bar
-CREATE TABLE Story (
-    id int NOT NULL PRIMARY KEY AUTO_INCREMENT,
-    author_address VARCHAR(255) NOT NULL,
-    title VARCHAR(255),
-    story_content LONGTEXT NOT NULL,
-    whiskey_points INT DEFAULT 0,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX (author_address),
-    INDEX (created_at)
+-- 如果需要外键功能，务必先开启
+PRAGMA foreign_keys = ON;
+
+-- 先建表
+CREATE TABLE IF NOT EXISTS Story (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    author_address TEXT NOT NULL,
+    title TEXT,
+    story_content TEXT NOT NULL,
+    whiskey_points INTEGER DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 分别创建索引
+CREATE INDEX IF NOT EXISTS idx_author_address ON Story (author_address);
+
+CREATE INDEX IF NOT EXISTS idx_created_at ON Story (created_at);

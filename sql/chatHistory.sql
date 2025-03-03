@@ -1,7 +1,7 @@
-CREATE TABLE if NOT EXISTS ChatHistory (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY, 
-    user_id VARCHAR(255) NOT NULL, 
-    role ENUM('user', 'ai') NOT NULL, 
-    content TEXT NOT NULL, 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
+CREATE TABLE IF NOT EXISTS ChatHistory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    role TEXT CHECK (role IN ('user', 'ai')) NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

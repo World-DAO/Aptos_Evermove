@@ -1,19 +1,18 @@
-import { createPool } from 'mysql2/promise';
+import sqlite3 from 'sqlite3';
+import { open } from 'sqlite';
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
     throw new Error("DATABASE_URL is not set in environment variables.");
 }
 
-const pool = createPool({
-    uri: databaseUrl,
-    connectionLimit: 10,
+const dbPromise = open({
+    filename: databaseUrl,
+    driver: sqlite3.Database
 });
 
 export async function query(sql: string, params?: any[]): Promise<any[]> {
-    const [rows] = await pool.execute(sql, params);
-    return rows as any[];
+    const db = await dbPromise;
+    const rows = await db.all(sql, params);
+    return rows;
 }
-
-
-

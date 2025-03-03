@@ -1,6 +1,4 @@
 import config from "@colyseus/tools";
-import { monitor } from "@colyseus/monitor";
-import { playground } from "@colyseus/playground";
 
 /**
  * Import your Room files
@@ -14,7 +12,6 @@ export default config({
          * Define your room handlers:
          */
         gameServer.define('tavern_room', TavernRoom);
-
     },
 
     initializeExpress: (app) => {
