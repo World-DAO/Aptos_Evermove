@@ -1,11 +1,310 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
+import crypto from "crypto";
 import { aiService } from "../services/aiService";
 import { StoryService } from "../services/storyServices";
 import { UserService } from "../services/userService";
 import { TxnService } from "../services/txnService";
 import { ReplyService } from "../services/replyService";
+import { getStoryById } from "../database/storyDB";
+import { generateJWT, verifyJWT, verifySuiSignature } from "../utils/jwtUtils";
 
 const router = express.Router();
+
+const loginChallenges: Record<string, string> = {};
+
+function authenticate(req: Request, res: Response, next: NextFunction) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).json({ error: "No JWT provided." });
+    }
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+    const decoded = verifyJWT(token);
+    if (!decoded || !("address" in decoded)) {
+        return res.status(401).json({ error: "Invalid JWT." });
+    }
+    (req as any).userAddress = (decoded as any).address;
+    next();
+}
+
+/**
+ * POST /login
+ * 生成登录挑战，要求传入 { address }
+ */
+router.post("/login", async (req: Request, res: Response) => {
+    const { address } = req.body;
+    if (!address) {
+        return res.status(400).json({ success: false, reason: "Address is required." });
+    }
+    // 生成一个随机挑战
+    const challenge = crypto.randomBytes(32).toString("hex");
+    // 存储挑战（以地址为 key）
+    loginChallenges[address] = challenge;
+    console.log(`Player ${address} login initiated with challenge ${challenge}`);
+    res.json({ success: true, challenge });
+});
+
+/**
+ * POST /login-signature
+ * 用户使用私钥对挑战签名，验证签名后返回 JWT
+ * 请求体需要 { address, signature, challenge }
+ */
+router.post("/login_signature", async (req: Request, res: Response) => {
+    const { address, signature, challenge } = req.body;
+    if (!challenge || !address) {
+        return res.status(400).json({ success: false, reason: "Address and challenge are required." });
+    }
+    // 验证挑战是否匹配
+    if (loginChallenges[address] !== challenge) {
+        return res.status(400).json({ success: false, reason: "Challenge mismatch. Please initiate login again." });
+    }
+    try {
+        // 验证 Sui 签名
+        if (await verifySuiSignature(address, challenge, signature) === false) {
+            throw new Error("Signature verification failed.");
+        }
+        // 读取用户信息
+        const user = await UserService.getUser(address);
+        const userState = await UserService.getDailyState(address);
+        // 签名通过，生成 JWT
+        const token = generateJWT({ address });
+        // 清除挑战
+        delete loginChallenges[address];
+        res.json({ success: true, token });
+    } catch (error: any) {
+        res.status(400).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * POST /stories
+ * 发布故事。需要认证，且请求体包含 { title, storyText }
+ */
+router.post("/stories", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    const { title, storyText } = req.body;
+    try {
+        const story = await StoryService.publishUserStory(address, title, storyText);
+        res.json({ success: true, story });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * DELETE /stories/:storyId
+ * 删除故事。需要认证。
+ */
+router.delete("/stories/:storyId", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    const { storyId } = req.params;
+    try {
+        await StoryService.deleteStory(address, storyId);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * GET /stories
+ * 获取用户所有故事（按时间倒序排序）。需要认证。
+ */
+router.get("/stories", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    try {
+        const stories = await StoryService.getAllStory(address);
+        res.json({ success: true, stories });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * GET /stories/random
+ * 获取一个随机故事。需要认证。
+ */
+router.get("/stories/random", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    try {
+        const story = await StoryService.fetchRandomStory(address);
+        res.json({ success: true, story });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * POST /whiskey/send
+ * 赠送威士忌。需要认证，传 { storyId }
+ */
+router.post("/whiskey/send", authenticate, async (req: Request, res: Response) => {
+    const fromAddress = (req as any).userAddress;
+    const { storyId } = req.body;
+    try {
+        await StoryService.sendWhiskey(fromAddress, storyId);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * GET /whiskey/points
+ * 获取威士忌积分。需要认证。
+ */
+router.get("/whiskey/points", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    try {
+        const points = await UserService.getWhiskeyPoints(address);
+        res.json({ success: true, points });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * POST /whiskey/points
+ * 更新威士忌积分。需要认证，传 { newPoints }
+ */
+router.post("/whiskey/points", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    const { newPoints } = req.body;
+    try {
+        await UserService.updateWhiskeyPoints(address, newPoints);
+        res.json({ success: true, newPoints });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+
+/**
+ * POST /reply/story
+ * 回复故事。需要认证，传 { storyId, replyText }
+ */
+router.post("/reply/story", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    const { storyId, replyText } = req.body;
+    try {
+        const reply = await ReplyService.replyStory(address, storyId, replyText);
+        res.json({ success: true, reply });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * POST /reply/user
+ * 回复用户。需要认证，传 { targetUserAddress, replyText, storyId }
+ */
+router.post("/reply/user", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    const { targetUserAddress, replyText, storyId } = req.body;
+    try {
+        const reply = await ReplyService.replyBack(address, storyId, replyText, targetUserAddress);
+        res.json({ success: true, reply });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * GET /replies/story/:storyId
+ * 获取某个故事的回复记录。需要认证。
+ */
+router.get("/replies/story/:storyId", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    const storyId = Number(req.params.storyId);
+    try {
+        const replies = await ReplyService.getRepliesForStoryByUser(address, storyId);
+        res.json({ success: true, replies });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * GET /replies/new
+ * 获取新回复（未读）。需要认证。
+ */
+router.get("/replies/new", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    try {
+        const newReplies = await ReplyService.getNewReply(address);
+        res.json({ success: true, newReplies });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * POST /replies/mark_read
+ * 标记回复为已读。需要认证，传 { replyIds }
+ */
+router.post("/replies/mark_read", authenticate, async (req: Request, res: Response) => {
+    const { replyIds } = req.body;
+    try {
+        await ReplyService.markReplyRead(replyIds);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * POST /replies/mark_unread
+ * 标记回复为未读。需要认证，传 { replyIds }
+ */
+router.post("/replies/mark_unread", authenticate, async (req: Request, res: Response) => {
+    const { replyIds } = req.body;
+    try {
+        await ReplyService.markReplyUnread(replyIds);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * GET /stories/saved_stories
+ * 获取用户收到的故事（基于收藏）。需要认证。
+ */
+router.get("/stories/saved_stories", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    try {
+        await StoryService.getDailyStories(address);
+        const likedStories = await UserService.getLikedStories(address);
+        const recvStories = await Promise.all(
+            likedStories.map(async (storyId: string) => await getStoryById(storyId))
+        );
+        res.json({ success: true, recvStories });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * POST /stories/mark_saved
+ * 收藏故事。需要认证，传 { storyId }
+ */
+router.post("/stories/mark_saved", authenticate, async (req: Request, res: Response) => {
+    const { storyId } = req.body;
+    const address = (req as any).userAddress;
+    try {
+        await StoryService.markLikedStory(address, storyId);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+
+
+/**
+ * ------------------------------
+ * 以下是 AI 服务相关的路由
+*/
+
 
 /**
  * 获取用户和 AI 的聊天记录
@@ -110,6 +409,11 @@ router.get("/get_reply_num/:storyId", async (req, res) => {
         res.status(500).json({ error: "Failed to get reply num by story" });
     }
 })
+
+/**
+ * ------------------------------
+ * 以下是链上相关的路由
+*/
 
 /**
  * @route POST /createTxn
