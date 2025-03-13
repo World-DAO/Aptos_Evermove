@@ -1,23 +1,6 @@
+import { Reply } from '../types/Reply';
+import { Story } from '../types/Story';
 import { query } from './index';
-
-export interface Story {
-    id: number;
-    author_address: string;
-    title: string;
-    story_content: string;
-    created_at: Date;
-    // 还可能有 whiskey_points 等字段，看你表结构而定
-}
-
-export interface Reply {
-    id: number;
-    story_id: number;
-    author_address: string;
-    to_address: string;
-    reply_content: string;
-    created_at: Date;
-    // 还可能有 unread 字段，看你表结构而定
-}
 
 /**
  * 发布故事

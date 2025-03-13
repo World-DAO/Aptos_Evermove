@@ -1,12 +1,5 @@
 import { query } from "../database/index";
-
-export interface UserState {
-    address: string;
-    date: string;
-    published_num: number;
-    received_num: number;
-    sent_whiskey_num: number;
-}
+import { UserState } from "../types/UserState";
 
 /**
  * 获取当天用户状态

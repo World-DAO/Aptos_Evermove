@@ -120,8 +120,22 @@ router.get("/stories", authenticate, async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /stories/daily
+ * 获取用户每日故事。需要认证。
+ */
+router.get("/stories/daily", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    try {
+        const dailyStories = await StoryService.getDailyStories(address);
+        res.json({ success: true, dailyStories });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
  * GET /stories/random
- * 获取一个随机故事。需要认证。
+ * 获取随机故事。需要认证。
  */
 router.get("/stories/random", authenticate, async (req: Request, res: Response) => {
     const address = (req as any).userAddress;
@@ -292,6 +306,69 @@ router.post("/stories/mark_saved", authenticate, async (req: Request, res: Respo
     const address = (req as any).userAddress;
     try {
         await StoryService.markLikedStory(address, storyId);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * POST /stories/unmark_saved
+ * 取消收藏故事。需要认证，传 { storyId }
+ */
+router.post("/stories/unmark_saved", authenticate, async (req: Request, res: Response) => {
+    const { storyId } = req.body;
+    const address = (req as any).userAddress;
+    try {
+        await StoryService.unmarkLikedStory(address, storyId);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+
+/**
+ * GET /stories/received_stories
+ * 获取用户收到的故事（基于收藏）。需要认证。
+ */
+router.get("/stories/received_stories", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    try {
+        const receivedStories = await UserService.getReceivedStories(address);
+        const stories = await Promise.all(
+            receivedStories.map(async (storyId: string) => await getStoryById(storyId))
+        );
+        res.json({ success: true, receivedStories: stories });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * POST /stories/mark_received
+ * 标记收到的故事。需要认证，传 { storyId }
+ */
+router.post("/stories/mark_received", authenticate, async (req: Request, res: Response) => {
+    const { storyId } = req.body;
+    const address = (req as any).userAddress;
+    try {
+        await StoryService.markReceivedStory(address, storyId);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * POST /stories/unmark_received
+ * 取消标记收到的故事。需要认证，传 { storyId }
+ */
+router.post("/stories/unmark_received", authenticate, async (req: Request, res: Response) => {
+    const { storyId } = req.body;
+    const address = (req as any).userAddress;
+    try {
+        await StoryService.unmarkReceivedStory(address, storyId);
         res.json({ success: true });
     } catch (error: any) {
         res.status(500).json({ success: false, reason: error.message });

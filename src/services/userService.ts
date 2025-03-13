@@ -1,12 +1,7 @@
-import { getUserState, setUserState, UserState } from "../database/stateDB";
-import { createUser, getIntimacy, getUserByAddress, getUserPoints, updateIntimacy, updateUserPoints, User } from "../database/userDB";
-
-interface UserDailyState {
-    published_num: number;
-    received_num: number;
-    sent_whiskey_num: number;
-    date: Date;
-}
+import { getUserState, setUserState } from "../database/stateDB";
+import { createUser, getIntimacy, getUserByAddress, getUserPoints, updateIntimacy, updateUserPoints } from "../database/userDB";
+import { User } from "../types/User";
+import { UserState } from "../types/UserState";
 
 export class UserService {
     /**
@@ -32,7 +27,7 @@ export class UserService {
        */
     static async getDailyState(address: string): Promise<UserState> {
         const dailyState = await getUserState(address);
-        let state: UserDailyState;
+        let state: UserState;
         if (dailyState) {
             state = dailyState;
         } else {
@@ -45,7 +40,7 @@ export class UserService {
             }
             state = newState;
         }
-        return dailyState;
+        return state;
     }
 
     static async getWhiskeyPoints(address: string): Promise<number> {
@@ -91,5 +86,34 @@ export class UserService {
         }
 
         return likedStories;
+    }
+
+    static async getReceivedStories(address: string) {
+        const user = await getUserByAddress(address);
+        if (!user) {
+            throw new Error("User not found.");
+        }
+
+        let receivedStories = user.receivedStories;
+
+        console.log(receivedStories);
+
+        // 处理 `{}` 为空数组
+        if (typeof receivedStories === "object" && receivedStories !== null && !Array.isArray(receivedStories)) {
+            console.warn("⚠️ receivedStories 是 `{}`，转换为空数组");
+            receivedStories = [];
+        }
+
+        if (typeof receivedStories === "string") {
+            receivedStories = JSON.parse(receivedStories);
+        }
+
+        // **确保 `receivedStories` 是数组**
+        if (!Array.isArray(receivedStories)) {
+            console.warn("⚠️ receivedStories 不是数组，返回空数组");
+            receivedStories = [];
+        }
+
+        return receivedStories;
     }
 }

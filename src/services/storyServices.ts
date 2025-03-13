@@ -1,8 +1,9 @@
 // src/services/storyService.ts
 import { addUserPublishedStory, addUserReceivedStory, addUserSentWhiskey, getUserState } from '../database/stateDB';
-import { publishStory, getRandomStory, getStoryByAuthor, Story, addWhiskeyPoints, getStoryById, reply, getReplyByToAddress, Reply, getNewReplyByToAddress, markReplyRead, markReplyUnread, deleteStory } from '../database/storyDB';
-import { getUserByAddress, getUserPoints, markLikedStory, updateUserPoints } from '../database/userDB';
+import { publishStory, getRandomStory, getStoryByAuthor, addWhiskeyPoints, getStoryById, deleteStory } from '../database/storyDB';
+import { getUserByAddress, getUserPoints, markLikedStory, markReceivedStory, updateUserPoints } from '../database/userDB';
 import { STORY_LIMITS } from "../constants";
+import { Story } from '../types/Story';
 
 export class StoryService {
     /**
@@ -80,9 +81,7 @@ export class StoryService {
         }
         // 更新状态
         await addUserReceivedStory(address);
-        // 加入列表
-        console.log("story id:", story.id.toString());
-        await markLikedStory(address, story.id.toString());
+        await markReceivedStory(address, story.id.toString());
         return story;
     }
 
@@ -131,5 +130,17 @@ export class StoryService {
 
     static async markLikedStory(address: string, storyId: string) {
         await markLikedStory(address, storyId);
+    }
+
+    static async unmarkLikedStory(address: string, storyId: string) {
+        await this.unmarkLikedStory(address, storyId);
+    }
+
+    static async markReceivedStory(address: string, storyId: string) {
+        await markReceivedStory(address, storyId);
+    }
+
+    static async unmarkReceivedStory(address: string, storyId: string) {
+        await this.unmarkReceivedStory(address, storyId);
     }
 }
