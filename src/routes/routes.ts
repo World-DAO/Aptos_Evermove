@@ -238,6 +238,22 @@ router.get("/replies/story/:storyId", authenticate, async (req: Request, res: Re
 });
 
 /**
+ * GET /replies/session/:target_address/:storyId
+ * 获取用户之间的回复记录。需要认证。
+ */
+router.get("/replies/session/:target_address/:storyId", authenticate, async (req: Request, res: Response) => {
+    const address = (req as any).userAddress;
+    const targetAddress = req.params.target_address;
+    const storyId = Number(req.params.storyId);
+    try {
+        const replies = await ReplyService.getRepliesBetweenAddressesForStory(address, targetAddress, storyId);
+        res.json({ success: true, replies });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
  * GET /replies/new
  * 获取新回复（未读）。需要认证。
  */

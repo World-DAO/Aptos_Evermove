@@ -1,4 +1,5 @@
-import { replyStory, getReplyByStoryId, Reply, markReplyRead, markReplyUnread, reply, getNewReplyByToAddress, getStoryById } from '../database/storyDB';
+import { replyStory, getReplyByStoryId, markReplyRead, markReplyUnread, reply, getNewReplyByToAddress, getStoryById } from '../database/storyDB';
+import { Reply } from '../types/Reply';
 
 export class ReplyService {
     /**
@@ -58,7 +59,6 @@ export class ReplyService {
                 const key1 = `${reply.author_address}-${reply.to_address}`;
                 const key2 = `${reply.to_address}-${reply.author_address}`;
                 const key = groupedReplies.has(key1) ? key1 : key2;
-
                 if (!groupedReplies.has(key)) {
                     groupedReplies.set(key, []);
                 }
@@ -68,6 +68,30 @@ export class ReplyService {
             return groupedReplies;
         } catch (error) {
             console.error(`❌ 获取 story ${storyId} 的 replies 失败:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * 获取指定两个地址之间的指定 StoryId 的回复记录
+     * @param address1 第一个地址
+     * @param address2 第二个地址
+     * @param storyId 故事 ID
+     * @returns 满足条件的回复记录数组
+     */
+    static async getRepliesBetweenAddressesForStory(address1: string, address2: string, storyId: number): Promise<Reply[]> {
+        try {
+            // 获取该 storyId 的所有回复
+            const replies = await getReplyByStoryId(storyId);
+
+            // 过滤出回复双方正好为 address1 与 address2 的记录，不论顺序
+            const filteredReplies = replies.filter(reply =>
+                (reply.author_address === address1 && reply.to_address === address2) ||
+                (reply.author_address === address2 && reply.to_address === address1)
+            );
+            return filteredReplies;
+        } catch (error) {
+            console.error(`❌ 获取 story ${storyId} 在地址 ${address1} 和 ${address2} 之间的回复失败:`, error);
             throw error;
         }
     }
