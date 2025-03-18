@@ -4,16 +4,25 @@ import { query } from './index';
 
 /**
  * 发布故事
- * - 将 MySQL 的 NOW() 改为 SQLite 的 CURRENT_TIMESTAMP
+ * - 如果用户有支付，则 isPay 为 true，对应数据库中的 paymentState 为 1；否则为 0。
+ * - 将 SQLite 的 CURRENT_TIMESTAMP 用于 created_at 字段
  */
-export async function publishStory(authorAddress: string, title: string, content: string): Promise<Story> {
+export async function publishStory(
+    authorAddress: string, 
+    title: string, 
+    content: string, 
+    isPay: boolean = false  // 新增参数，默认 false 表示未支付
+): Promise<Story> {
+    // 将 isPay 转换为 paymentState 状态：true 转为 1，false 转为 0
+    const paymentState = isPay ? 1 : 0;
+
     await query(
         `
         INSERT INTO Story
-        (author_address, title, story_content, whiskey_points, created_at)
-        VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)
+        (author_address, title, story_content, whiskey_points, paymentState, created_at)
+        VALUES (?, ?, ?, 0, ?, CURRENT_TIMESTAMP)
         `,
-        [authorAddress, title, content]
+        [authorAddress, title, content, paymentState]
     );
 
     // 取刚才插入的记录
@@ -166,4 +175,14 @@ export async function addWhiskeyPoints(storyId: string) {
         'UPDATE Story SET whiskey_points = whiskey_points + 1 WHERE id = ?',
         [storyId]
     );
+}
+
+/**
+ * 查询所有没有评分的pay to earn故事
+ */
+export async function getPaymentPendingStories(): Promise<Story[]> {
+    const rows = await query(
+        'SELECT * FROM Story WHERE paymentState = 1'
+    );
+    return rows;
 }

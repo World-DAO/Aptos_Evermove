@@ -1,6 +1,6 @@
 // src/services/storyService.ts
 import { addUserPublishedStory, addUserReceivedStory, addUserSentWhiskey, getUserState } from '../database/stateDB';
-import { publishStory, getRandomStory, getStoryByAuthor, addWhiskeyPoints, getStoryById, deleteStory } from '../database/storyDB';
+import { publishStory, getRandomStory, getStoryByAuthor, addWhiskeyPoints, getStoryById, deleteStory, getPaymentPendingStories } from '../database/storyDB';
 import { getUserByAddress, getUserPoints, markLikedStory, markReceivedStory, updateUserPoints } from '../database/userDB';
 import { STORY_LIMITS } from "../constants";
 import { Story } from '../types/Story';
@@ -9,20 +9,23 @@ export class StoryService {
     /**
      * 发布故事
      * @param authorAddress 用户地址
+     * @param title 故事标题
      * @param content 故事内容
+     * @param isPay 是否付费，默认为 false，false 表示普通故事，true 表示付费故事（初始状态 paymentState=1）
      * @returns 发布的故事实例
      */
-    static async publishUserStory(authorAddress: string, title: string, content: string): Promise<Story> {
+    static async publishUserStory(authorAddress: string, title: string, content: string, isPay: boolean = false): Promise<Story> {
         // Story 长度验证
         if (content.length < STORY_LIMITS.MIN_WORD) {
-            throw new Error("Story content to short!");
+            throw new Error("Story content too short!");
         }
         // 每日数量限制验证
         let userState = await getUserState(authorAddress);
         if (userState.published_num >= STORY_LIMITS.MAX_PUBLISH) {
             throw new Error("Reach daily publish story limit!");
         }
-        const story = await publishStory(authorAddress, title, content);
+        // 调用数据库层的 publishStory 时传入 isPay 参数
+        const story = await publishStory(authorAddress, title, content, isPay);
         await addUserPublishedStory(authorAddress);
         return story;
     }
@@ -126,6 +129,11 @@ export class StoryService {
         //更新每日状态
         await addUserSentWhiskey(fromAddress);
         await addWhiskeyPoints(storyId);
+    }
+
+    // 获取所有没有评分的pay to earn的故事
+    static async getPaymentPendingStories(): Promise<Story[]> {
+        return await getPaymentPendingStories();
     }
 
     static async markLikedStory(address: string, storyId: string) {

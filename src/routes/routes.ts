@@ -81,9 +81,10 @@ router.post("/login_signature", async (req: Request, res: Response) => {
  */
 router.post("/stories", authenticate, async (req: Request, res: Response) => {
     const address = (req as any).userAddress;
-    const { title, storyText } = req.body;
+    const { title, storyText, isPay } = req.body; // 新增 isPay 参数
     try {
-        const story = await StoryService.publishUserStory(address, title, storyText);
+        // 将 isPay 传递给 service 层，默认为 false（普通故事）或 true（付费故事）
+        const story = await StoryService.publishUserStory(address, title, storyText, isPay);
         res.json({ success: true, story });
     } catch (error: any) {
         res.status(500).json({ success: false, reason: error.message });
@@ -659,6 +660,15 @@ router.post("/claimRewards", async (req, res) => {
         res.json({ success: true, data: response });
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.get("/stories/payment_pending", authenticate, async (req: Request, res: Response) => {
+    try {
+        const stories = await StoryService.getPaymentPendingStories();
+        res.json({ success: true, stories });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
     }
 });
 export default router;
