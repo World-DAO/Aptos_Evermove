@@ -94,11 +94,14 @@ export class StoryService {
     static async getDailyStories(address: string) {
         // 查询用户今天领取的故事
         let dailyState = await getUserState(address);
+        const stories = [];
         while (dailyState.received_num < STORY_LIMITS.MAX_FETCH) {
-            await this.fetchRandomStory(address);
+            const story = await StoryService.fetchRandomStory(address);
+            stories.push(story);
             dailyState = await getUserState(address);
-            console.log(dailyState);
+            console.log("Updated daily state:", dailyState);
         }
+        return stories;
     }
 
     /**

@@ -229,9 +229,11 @@ router.post("/reply/user", authenticate, async (req: Request, res: Response) => 
  */
 router.get("/replies/story/:storyId", authenticate, async (req: Request, res: Response) => {
     const address = (req as any).userAddress;
+    console.log("GetReplyies Request by address:", address);
     const storyId = Number(req.params.storyId);
     try {
         const replies = await ReplyService.getRepliesForStoryByUser(address, storyId);
+        console.log({ success: true, replies });
         res.json({ success: true, replies });
     } catch (error: any) {
         res.status(500).json({ success: false, reason: error.message });

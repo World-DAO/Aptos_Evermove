@@ -65,7 +65,7 @@ export class ReplyService {
                 groupedReplies.get(key)!.push(reply);
             }
 
-            return groupedReplies;
+            return Array.from(groupedReplies.values());;
         } catch (error) {
             console.error(`❌ 获取 story ${storyId} 的 replies 失败:`, error);
             throw error;
