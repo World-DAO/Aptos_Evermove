@@ -3,14 +3,12 @@
 import { useEffect, useState } from "react";
 import { EventBus } from "../EventBus";
 import { WalletModal } from "@/components/WalletModal";
-import { useCurrentWallet, useSignPersonalMessage } from "@mysten/dapp-kit";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import ColyseusClient from "@/game/utils/ColyseusClient";
-import { getSuiBalance } from "./sui";
 
 export function ReactPhaserBridge() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { currentWallet } = useCurrentWallet();
-  const { mutate: signPersonalMessage } = useSignPersonalMessage();
+  const { connected, account, signMessage } = useWallet();
 
   useEffect(() => {
     const loginHandler = async () => {
@@ -29,17 +27,17 @@ export function ReactPhaserBridge() {
   }, []);
 
   const handleGameStart = async () => {
-    if (!currentWallet || !currentWallet.accounts.length) {
+    if (!connected || !account) {
       console.error("❌ Wallet not connected!");
       alert("Please connect your wallet first!");
       return;
     }
 
-    const address = currentWallet.accounts[0].address;
+    const address = account.address;
     console.log("🎮 Connecting to Colyseus, wallet address:", address);
 
     try {
-      const room = await ColyseusClient.joinRoom(address);
+      const room = await ColyseusClient.joinRoom(address.toString());
       ColyseusClient.sendMessage("userLogin", { address });
 
       const loginChallenge = await new Promise<{ challenge: string }>((resolve, reject) => {
@@ -57,18 +55,17 @@ export function ReactPhaserBridge() {
       const challenge = loginChallenge.challenge;
       console.log("Challenge:", challenge);
 
-      const signature = await new Promise<string>((resolve, reject) => {
-        signPersonalMessage(
-          { message: new TextEncoder().encode(challenge) },
-          { onSuccess: (result) => resolve(result.signature), onError: (error) => reject(error) }
-        );
+      // ✅ Aptos 签名方式
+      const signatureResponse = await signMessage({
+        message: challenge,
+        nonce: "AptosDapp",
       });
 
-      console.log("signature:", signature);
+      console.log("signature:", signatureResponse.signature);
 
       ColyseusClient.sendMessage("loginSignature", {
         address,
-        signature: signature,
+        signature: signatureResponse.signature,
         challenge: challenge,
       });
 
@@ -83,23 +80,21 @@ export function ReactPhaserBridge() {
       console.log("loginResponse:", loginResponse);
 
       if (loginResponse.success) {
-        const suiBalance = await getSuiBalance(address);
         EventBus.emit("phaser_loginResponse", {
           success: true,
           data: {
-            suiBalance: suiBalance,
-            walletName: currentWallet.name,
+            walletName: account.address,
             walletAddress: address,
             token: loginResponse.token,
           },
         });
 
-        setIsModalOpen(false); // Close wallet selection modal
+        setIsModalOpen(false); // 关闭钱包选择弹窗
 
-        // Store the token in localStorage
+        // 存储 Token
         if (loginResponse.token) {
-          localStorage.setItem('token', loginResponse.token);
-          sessionStorage.setItem('token', loginResponse.token);
+          localStorage.setItem("token", loginResponse.token);
+          sessionStorage.setItem("token", loginResponse.token);
         }
       } else {
         console.error("❌ Login failed:", loginResponse.reason);
