@@ -1,4 +1,6 @@
-# BeforeLife Bar for ETH Global Agentic
-npm install or yarn install
+# Moonclub
 
-start: npm run dev
+### Install & Run local
+`npm install` or `yarn install`
+
+`npm run dev`
