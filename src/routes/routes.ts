@@ -6,11 +6,12 @@ import { UserService } from "../services/userService";
 import { TxnService } from "../services/txnService";
 import { ReplyService } from "../services/replyService";
 import { getStoryById } from "../database/storyDB";
-import { generateJWT, verifyJWT, verifySuiSignature } from "../utils/jwtUtils";
+import { generateJWT, verifyAptosSignature, verifyJWT, verifySuiSignature } from "../utils/jwtUtils";
+import e from "express";
 
 const router = express.Router();
 
-const loginChallenges: Record<string, string> = {};
+const loginChallenges: Record<any, string> = {};
 
 function authenticate(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers.authorization;
@@ -39,7 +40,12 @@ router.post("/login", async (req: Request, res: Response) => {
     const challenge = crypto.randomBytes(32).toString("hex");
     // 存储挑战（以地址为 key）
     loginChallenges[address] = challenge;
-    console.log(`Player ${address} login initiated with challenge ${challenge}`);
+    if (address instanceof Uint8Array) {
+        const hexAddress = "0x" + Buffer.from(address).toString("hex");
+        console.log(`Player ${hexAddress} login initiated with challenge ${challenge}`);
+    } else {
+        console.log(`Player ${address} login initiated with challenge ${challenge}`);
+    }
     res.json({ success: true, challenge });
 });
 
@@ -58,10 +64,22 @@ router.post("/login_signature", async (req: Request, res: Response) => {
         return res.status(400).json({ success: false, reason: "Challenge mismatch. Please initiate login again." });
     }
     try {
-        // 验证 Sui 签名
-        if (await verifySuiSignature(address, challenge, signature) === false) {
-            throw new Error("Signature verification failed.");
+        // 区分 Sui 和 Aptos 签名
+        if (address instanceof Uint8Array) {
+            console.log("Aptos signature detected.");
+            const hexAddress = "0x" + Buffer.from(address).toString("hex");
+            console.log("Hex Address:", hexAddress);
+            if (await verifyAptosSignature(hexAddress, challenge, signature) === false) {
+                throw new Error("Signature verification failed.");
+            }
+        } else {
+            console.log("Sui signature detected.");
+            if (await verifySuiSignature(address, challenge, signature) === false) {
+                throw new Error("Signature verification failed.");
+            }
         }
+
+
         // 读取用户信息
         const user = await UserService.getUser(address);
         const userState = await UserService.getDailyState(address);

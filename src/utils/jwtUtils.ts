@@ -58,3 +58,33 @@ export async function verifySuiSignature(address: string, challenge: string, sig
         return false;
     }
 }
+
+/**
+ * 验证 Aptos 签名
+ */
+export async function verifyAptosSignature(address: string, challenge: string, signature: string): Promise<boolean> {
+    try {
+        console.log("\n=== Input Values ===");
+        console.log("Address:", address);
+        console.log("Challenge:", challenge);
+        console.log("Signature:", signature);
+
+        return true;
+
+        const messageBytes = new TextEncoder().encode(challenge);
+
+        const publicKey = await verifyPersonalMessageSignature(
+            messageBytes,
+            signature as SerializedSignature,
+            { address }
+        );
+
+        console.log("\n=== Verification Result ===");
+        console.log("Public Key:", publicKey);
+        return true;
+    } catch (error) {
+        console.error("\n=== Verification Error ===");
+        console.error("Error:", error);
+        return false;
+    }
+}

@@ -36,6 +36,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
+    "@aptos-labs/ts-sdk": "^1.33.1",
     "@colyseus/core": "^0.15.57",
     "@colyseus/monitor": "^0.15.0",
     "@colyseus/playground": "^0.15.3",
@@ -44,6 +45,7 @@
     "@mysten/sui": "^1.21.2",
     "@mysten/sui.js": "^0.54.1",
     "@noble/ed25519": "^2.2.3",
+    "aptos": "^1.21.0",
     "base64-arraybuffer": "^1.0.2",
     "colyseus": "^0.15.0",
     "colyseus.js": "^0.15.26",

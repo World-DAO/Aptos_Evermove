@@ -3,13 +3,12 @@ import { MapSchema, Schema, type } from "@colyseus/schema";
 import { StoryService } from "../services/storyServices";
 import { UserService } from "../services/userService";
 import { ReplyService } from "../services/replyService";
-import { generateJWT, verifyJWT, verifySuiSignature } from "../utils/jwtUtils";
+import { generateJWT, verifyAptosSignature, verifyJWT, verifySuiSignature } from "../utils/jwtUtils";
 import { getStoryById } from "../database/storyDB";
 import crypto from "crypto";
 
 class Player extends Schema {
-  @type("string")
-  address: string;
+  address: any;
 }
 
 export class TavernState extends Schema {
@@ -111,10 +110,25 @@ export class TavernRoom extends Room<TavernState> {
     const player = new Player();
     player.address = address;
     this.state.players.set(client.sessionId, player);
-    console.log(`Player ${address} logged in with session ${client.sessionId} and challenge ${challenge}`);
+    console.log(`Player logged in with session ${client.sessionId} and challenge ${challenge}`);
 
     // 发送挑战消息给前端
     client.send("loginChallenge", { challenge });
+  }
+
+  /**
+   * 验证 Aptos 地址
+   * @param address - 地址对象
+   * @returns 是否为有效的 Aptos 地址
+   */
+  async isAptosAddress(address: any): Promise<boolean> {
+    if (address?.data && typeof address.data === "object") {
+      const values = Object.values(address.data);
+      if (values.length === 32) {
+        return values.every((v) => typeof v === "number" && v >= 0 && v <= 255);
+      }
+    }
+    return false;
   }
 
   /**
@@ -138,8 +152,19 @@ export class TavernRoom extends Room<TavernState> {
       console.log("address:", address);
       console.log("challenge:", challenge);
       console.log("signature:", signature);
-      if (await verifySuiSignature(address, challenge, signature) === false) {
-        throw new Error("Signature verification failed.");
+      // 区分 Sui 和 Aptos 签名
+      if (this.isAptosAddress(address)) {
+        console.log("Aptos signature detected.");
+        const hexAddress = "0x" + Buffer.from(new Uint8Array(Object.values(address.data) as number[])).toString("hex");
+        console.log("Hex Address:", hexAddress);
+        if (await verifyAptosSignature(hexAddress, challenge, signature) === false) {
+          throw new Error("Signature verification failed.");
+        }
+      } else {
+        console.log("Sui signature detected.");
+        if (await verifySuiSignature(address, challenge, signature) === false) {
+          throw new Error("Signature verification failed.");
+        }
       }
 
       // 读取用户信息
