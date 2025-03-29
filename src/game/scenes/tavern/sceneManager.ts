@@ -60,10 +60,10 @@ export class SceneManager {
             .text(
                 70,
                 20,
-                `${userData.walletAddress.slice(
+                `${String(userData.walletAddress).slice(
                     0,
                     4
-                )}...${userData.walletAddress.slice(-4)}`,
+                )}...${String(userData.walletAddress).slice(-4)}`,
                 {
                     fontFamily: "Arial",
                     fontSize: "16px",

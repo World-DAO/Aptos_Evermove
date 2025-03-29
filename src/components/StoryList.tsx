@@ -4,8 +4,8 @@ import { StoryListItem } from '@/components/StoryListItem';
 import { Search } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useReplies } from '@/hooks/useReplies';
-import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useStories } from '@/hooks/useStories';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 
 export interface Story {
   id: number;
@@ -22,15 +22,15 @@ interface StoryListProps {
   setRecipient: (address: string) => void;
 }
 
-export function StoryList({ 
-  selectedStory, 
+export function StoryList({
+  selectedStory,
   onSelect,
   isMyStories,
   setRecipient,
 }: StoryListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const { refreshReplies } = useReplies(selectedStory?.id.toString() ?? null, isMyStories);
-  const account = useCurrentAccount();
+  const { account } = useWallet();
 
   const { stories: fetchedStories, loading: storiesLoading } = useStories(isMyStories);
 
@@ -45,7 +45,7 @@ export function StoryList({
   const filteredStories = React.useMemo(() => {
     if (!searchQuery) return stories;
     const query = searchQuery.toLowerCase();
-    return stories.filter((story) => 
+    return stories.filter((story) =>
       story.title.toLowerCase().includes(query) ||
       story.story_content.toLowerCase().includes(query) ||
       story.author_address.toLowerCase().includes(query)
@@ -66,7 +66,7 @@ export function StoryList({
                        focus:outline-none focus:border-[#4EEAFF]/50"
           />
           <p className="w-18 text-[#4EEAFF] mt-2">
-            {account?.address ? `${account.address.slice(0,4)}...${account.address.slice(-4)}` : 'Not Connected'}
+            {account?.address ? `${String(account.address).slice(0, 4)}...${String(account.address).slice(-4)}` : '未连接钱包'}
           </p>
         </div>
       </div>
@@ -90,4 +90,4 @@ export function StoryList({
       </ScrollArea>
     </div>
   );
-} 
+}
