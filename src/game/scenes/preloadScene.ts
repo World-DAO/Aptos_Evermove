@@ -147,7 +147,6 @@ export class preloadScene extends Scene {
         this.load.image('button_chat', 'img/button_chat.png');
         this.load.image("bar_menu", "img/bar_menu.png");
         this.load.image("bar_bottle", "img/bar_bottle.png");
-        this.load.image("wizball", "img/wizball.png");
         this.load.image("sui_logo", "img/sui_logo.png");
         this.registry.set("gridSize", 50);
         // debugger;

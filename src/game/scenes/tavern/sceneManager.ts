@@ -5,7 +5,6 @@ import { findPath } from "../../utils/findPath";
 import { movementController } from "./moveController";
 import { staticObstacles } from "@/game/objects/static";
 import { EventBus } from "@/game/EventBus";
-import { getSuiBalance } from "@/game/utils/sui";
 
 export class SceneManager {
     public player!: Player;
@@ -87,7 +86,6 @@ export class SceneManager {
             .setDepth(1000)
             .setAlpha(0.2);
 
-        // 添加SUI logo
         const suiLogo = this.scene.add
             .image(this.scene.cameras.main.width - 105, 28, "sui_logo") // 调整位置
             .setDisplaySize(20, 24) // 增加logo尺寸
@@ -353,9 +351,8 @@ export class SceneManager {
 
         const userData = this.scene.registry.get("userData");
         const address = userData.walletAddress;
-        const newBalance = await getSuiBalance(address);
+        const newBalance = 5
 
-        // 更新显示（移除"SUI:"前缀）
         this.tokenAmount.setText(`${Number(newBalance).toFixed(2)}`);
 
         // 更新registry中的数据
