@@ -8,7 +8,8 @@ import { getStoryById } from "../database/storyDB";
 import crypto from "crypto";
 
 class Player extends Schema {
-  address: any;
+  @type("string")
+  address: string;
 }
 
 export class TavernState extends Schema {
@@ -85,6 +86,7 @@ export class TavernRoom extends Room<TavernState> {
     }
 
     const address = this.verifyClientJWT(token);
+    console.log("address:", address);
     if (!address) {
       client.send("error", { message: "Invalid JWT." });
       return null;
@@ -103,45 +105,58 @@ export class TavernRoom extends Room<TavernState> {
       return;
     }
 
+    // 转换地址格式
+    let addressStr: string;
+    const aptosAddress = this.convertAptosAddress(address);
+    if (aptosAddress) {
+      console.log("Aptos address detected.");
+      console.log("Hex Address:", aptosAddress);
+      addressStr = aptosAddress;
+    } else {
+      console.log("Sui address detected.");
+      addressStr = address;
+    }
+
     // 生成一个随机的挑战消息
     const challenge = Buffer.from(crypto.randomBytes(32)).toString('hex');
+
     // 存储挑战消息，关联到客户端的 sessionId
     this.state.loginChallenges.set(client.sessionId, challenge);
+
+    // 使用转换后的地址字符串创建玩家
     const player = new Player();
-    player.address = address;
+    player.address = addressStr;
     this.state.players.set(client.sessionId, player);
-    console.log(`Player logged in with session ${client.sessionId} and challenge ${challenge}`);
+    console.log(`Player ${player.address} logged in with session ${client.sessionId}, address ${addressStr} and challenge ${challenge}`);
 
     // 发送挑战消息给前端
     client.send("loginChallenge", { challenge });
   }
 
   /**
-   * 验证 Aptos 地址
-   * @param address - 地址对象
-   * @returns 是否为有效的 Aptos 地址
+   * 验证 Aptos 地址并转换为字符串格式
    */
-  async isAptosAddress(address: any): Promise<boolean> {
+  private convertAptosAddress(address: any): string | null {
     if (address?.data && typeof address.data === "object") {
       const values = Object.values(address.data);
-      if (values.length === 32) {
-        return values.every((v) => typeof v === "number" && v >= 0 && v <= 255);
+      if (values.length === 32 && values.every((v) => typeof v === "number" && v >= 0 && v <= 255)) {
+        // 转换为标准的 hex 字符串格式
+        return "0x" + Buffer.from(new Uint8Array(values as number[])).toString("hex");
       }
     }
-    return false;
+    return null;
   }
 
   /**
     * 处理用户签名验证请求，生成 JWT
     */
   async handleLoginSignature(client: Client, data: any) {
-    const { signature, challenge } = data;
+    const { address, signature, challenge } = data;
     if (!challenge) {
       client.send("loginResponse", { success: false, reason: "No challenge found. Please initiate login again." });
       return;
     }
     // 获取用户地址
-    const address = this.state.players.get(client.sessionId)?.address;
     if (!address) {
       client.send("loginResponse", { success: false, reason: "User not authenticated." });
       return;
@@ -152,27 +167,29 @@ export class TavernRoom extends Room<TavernState> {
       console.log("address:", address);
       console.log("challenge:", challenge);
       console.log("signature:", signature);
-      // 区分 Sui 和 Aptos 签名
-      if (this.isAptosAddress(address)) {
+
+      let addressStr: string;
+      let isValid: boolean;
+
+      // 检查是否为 Aptos 地址并转换
+      const aptosAddress = this.convertAptosAddress(address);
+      if (aptosAddress) {
         console.log("Aptos signature detected.");
-        const hexAddress = "0x" + Buffer.from(new Uint8Array(Object.values(address.data) as number[])).toString("hex");
-        console.log("Hex Address:", hexAddress);
-        if (await verifyAptosSignature(hexAddress, challenge, signature) === false) {
-          throw new Error("Signature verification failed.");
-        }
+        console.log("Hex Address:", aptosAddress);
+        isValid = await verifyAptosSignature(aptosAddress, challenge, signature);
+        addressStr = aptosAddress;
       } else {
         console.log("Sui signature detected.");
-        if (await verifySuiSignature(address, challenge, signature) === false) {
-          throw new Error("Signature verification failed.");
-        }
+        isValid = await verifySuiSignature(address, challenge, signature);
+        addressStr = address;
       }
 
       // 读取用户信息
-      console.log("address:", address)
-      const user = await UserService.getUser(address);
-      const userState = await UserService.getDailyState(address);
+      console.log("address:", addressStr)
+      const user = await UserService.getUser(addressStr);
+      const userState = await UserService.getDailyState(addressStr);
       // 签名验证通过，生成 JWT
-      const token = generateJWT({ address });
+      const token = generateJWT({ addressStr });
       client.auth = { jwt: token };
       // 发送 JWT 给前端
       client.send("loginResponse", { success: true, token });
