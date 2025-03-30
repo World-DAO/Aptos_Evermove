@@ -153,11 +153,9 @@ export class preloadScene extends Scene {
             window.innerWidth,
             window.innerHeight
         );
-        console.log(width, height);
         const gridArray = new Array(Math.ceil(width / 50))
             .fill(null)
             .map(() => new Array(Math.ceil(height / 50)).fill(0));
-        console.log(gridArray);
         this.registry.set("grid", gridArray);
     }
 }

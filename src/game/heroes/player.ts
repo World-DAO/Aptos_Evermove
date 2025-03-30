@@ -3,7 +3,7 @@ import Phaser from "phaser";
 export default class Player {
     public sprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     private lastDirection: "left" | "right" | "up" | "down" = "down";
-    public speed = 500;
+    public speed = 800;
 
     constructor(scene: Phaser.Scene, x: number, y: number, textureKey: string) {
         this.sprite = scene.physics.add.sprite(x, y, textureKey);

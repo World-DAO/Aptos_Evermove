@@ -27,8 +27,8 @@ export class SceneManager {
     public initialize() {
         this.initializeGrid();
         this.createBackground();
-        this.createObstacles();
         this.createCharacters();
+        this.createObstacles();
         this.setupCamera();
         this.createUI();
         // 添加恢复游戏的事件监听
@@ -59,10 +59,9 @@ export class SceneManager {
             .text(
                 70,
                 20,
-                `${String(userData.walletAddress).slice(
-                    0,
-                    4
-                )}...${String(userData.walletAddress).slice(-4)}`,
+                `${String(userData.walletAddress).slice(0, 4)}...${String(
+                    userData.walletAddress
+                ).slice(-4)}`,
                 {
                     fontFamily: "Arial",
                     fontSize: "16px",
@@ -122,38 +121,40 @@ export class SceneManager {
 
     private createSidebar() {
         const menuItems = [
-            { text: 'CONTENT', y: 200, key: 'button_content' },
-            { text: 'WRITE', y: 260, key: 'button_write' },
-            { text: 'CHAT', y: 320, key: 'button_chat' }
+            { text: "CONTENT", y: 200, key: "button_content" },
+            { text: "WRITE", y: 260, key: "button_write" },
+            { text: "CHAT", y: 320, key: "button_chat" },
         ];
 
-        menuItems.forEach(item => {
-            const button = this.scene.add.image(78, item.y, item.key)
+        menuItems.forEach((item) => {
+            const button = this.scene.add
+                .image(78, item.y, item.key)
                 .setScrollFactor(0)
                 .setDepth(1000)
                 .setInteractive({ useHandCursor: true });
 
-            button.on('pointerdown', () => {
-                if (item.text === 'CONTENT') {
-                    EventBus.emit('open-content');
-                } else if (item.text === 'WRITE') {
-                    EventBus.emit('open-write');
-                } else if (item.text === 'CHAT') {
-                    EventBus.emit('open-chat');
+            button.on("pointerdown", () => {
+                if (item.text === "CONTENT") {
+                    EventBus.emit("open-content");
+                } else if (item.text === "WRITE") {
+                    EventBus.emit("open-write");
+                } else if (item.text === "CHAT") {
+                    EventBus.emit("open-chat");
                 }
             });
 
             // Add hover effects
-            button.on('pointerover', () => {
+            button.on("pointerover", () => {
                 this.scene.input.manager.canvas.style.cursor = "pointer";
-                if (item.text !== 'WRITE') { // Don't affect selected button
+                if (item.text !== "WRITE") {
+                    // Don't affect selected button
                     button.setAlpha(0.8);
                 }
             });
 
-            button.on('pointerout', () => {
+            button.on("pointerout", () => {
                 this.scene.input.manager.canvas.style.cursor = "default";
-                if (item.text !== 'WRITE') {
+                if (item.text !== "WRITE") {
                     button.setAlpha(1);
                 }
             });
@@ -178,16 +179,17 @@ export class SceneManager {
 
     private createObstacles() {
         this.obstrucleGroup = this.scene.physics.add.staticGroup();
-
         for (const obstacle of staticObstacles) {
-            // debugger;
-            for (let y = obstacle.starty; y <= obstacle.endy; y++) {
-                for (let x = obstacle.startx; x <= obstacle.endx; x++) {
-                    this.grid[y][x] = 1;
-                }
-            }
+            const obstacleRect = this.scene.add.rectangle(
+                obstacle.startx,
+                obstacle.starty,
+                obstacle.endx - obstacle.startx,
+                obstacle.endy - obstacle.starty,
+            );
+            this.scene.physics.add.existing(obstacleRect, true);
+            this.obstrucleGroup.add(obstacleRect);
         }
-
+        this.scene.physics.add.collider(this.player.sprite, this.obstrucleGroup)
         //this.drawGrid();
     }
 
@@ -352,7 +354,7 @@ export class SceneManager {
 
         const userData = this.scene.registry.get("userData");
         const address = userData.walletAddress;
-        const newBalance = 5
+        const newBalance = 5;
 
         this.tokenAmount.setText(`${Number(newBalance).toFixed(2)}`);
 
