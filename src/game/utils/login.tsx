@@ -36,8 +36,65 @@ export function ReactPhaserBridge() {
     const address = account.address;
     console.log("🎮 Connecting to Colyseus, wallet address:", address);
 
+    const room = await ColyseusClient.joinRoom(address.toString());
+
     try {
-      const room = await ColyseusClient.joinRoom(address.toString());
+
+      // 先尝试使用 JWT 登录
+      const storedToken = localStorage.getItem("token");
+      if (storedToken) {
+        console.log("📝 尝试使用 JWT 登录");
+        ColyseusClient.sendMessage("jwtLogin", { token: storedToken });
+
+        try {
+          const jwtLoginResponse = await new Promise<{
+            success: boolean;
+            token?: string;
+            user?: any;
+            userState?: any;
+            reason?: string;
+          }>((resolve, reject) => {
+            room.onMessage("loginResponse", (data) => {
+              resolve(data);
+            });
+
+            setTimeout(() => reject(new Error("JWT 登录超时")), 5000);
+          });
+
+          if (jwtLoginResponse.success) {
+            console.log("✅ JWT 登录成功");
+            EventBus.emit("phaser_loginResponse", {
+              success: true,
+              data: {
+                walletName: account.address,
+                walletAddress: address,
+                token: jwtLoginResponse.token,
+                user: jwtLoginResponse.user,
+                userState: jwtLoginResponse.userState,
+              },
+            });
+
+            setIsModalOpen(false);
+
+            if (jwtLoginResponse.token) {
+              localStorage.setItem("token", jwtLoginResponse.token);
+              sessionStorage.setItem("token", jwtLoginResponse.token);
+            }
+            return;
+          } else {
+            console.log("❌ JWT 登录失败，清除 token");
+            localStorage.removeItem("token");
+            sessionStorage.removeItem("token");
+          }
+        } catch (error) {
+          console.log("❌ JWT 登录超时，清除 token");
+          localStorage.removeItem("token");
+          sessionStorage.removeItem("token");
+        }
+      }
+
+      // 如果 JWT 登录失败或超时，继续尝试签名登录
+      console.log("尝试签名登录");
       ColyseusClient.sendMessage("userLogin", { address });
 
       const loginChallenge = await new Promise<{ challenge: string }>((resolve, reject) => {
@@ -64,12 +121,18 @@ export function ReactPhaserBridge() {
       console.log("signature:", signatureResponse.signature);
 
       ColyseusClient.sendMessage("loginSignature", {
-        address,
+        address: address,
         signature: signatureResponse.signature,
         challenge: challenge,
       });
 
-      const loginResponse = await new Promise<{ success: boolean; token?: string; reason?: string }>((resolve, reject) => {
+      const loginResponse = await new Promise<{
+        success: boolean;
+        token?: string;
+        user?: any;
+        userState?: any;
+        reason?: string;
+      }>((resolve, reject) => {
         room.onMessage("loginResponse", (data) => {
           resolve(data);
         });
@@ -86,21 +149,25 @@ export function ReactPhaserBridge() {
             walletName: account.address,
             walletAddress: address,
             token: loginResponse.token,
+            user: loginResponse.user,
+            userState: loginResponse.userState,
           },
         });
 
-        setIsModalOpen(false); // 关闭钱包选择弹窗
+        setIsModalOpen(false);
 
-        // 存储 Token
         if (loginResponse.token) {
           localStorage.setItem("token", loginResponse.token);
           sessionStorage.setItem("token", loginResponse.token);
         }
       } else {
-        console.error("❌ Login failed:", loginResponse.reason);
+        console.error("❌ 登录失败:", loginResponse.reason);
       }
     } catch (error) {
-      console.error("❌ Failed to enter game:", error);
+      console.error("❌ 进入游戏失败:", error);
+      // 确保在任何错误情况下都清除可能无效的 token
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
     }
   };
 

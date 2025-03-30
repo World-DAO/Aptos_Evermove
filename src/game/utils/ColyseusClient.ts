@@ -1,7 +1,7 @@
 import { Client, Room } from "colyseus.js";
 
-//const COLYSEUS_SERVER = "https://put-franklin-speaker-indicating.trycloudflare.com";
-const COLYSEUS_SERVER = "ws://43.156.89.66:2567";
+const COLYSEUS_SERVER = "https://put-franklin-speaker-indicating.trycloudflare.com";
+//const COLYSEUS_SERVER = "ws://43.156.89.66:2567";
 //const COLYSEUS_SERVER = "ws://localhost:2567";
 
 export interface Story {

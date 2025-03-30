@@ -37,11 +37,11 @@ export function Mail({ className }: React.HTMLAttributes<HTMLDivElement>) {
 
     const fetchBalance = async () => {
       try {
-        const res = await fetch(
-          `https://fullnode.mainnet.aptoslabs.com/v1/accounts/${account.address}/resource/0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>`
-        );
-        const data = await res.json();
-        setBalance(Number(data?.data?.coin?.value) / 1e8); // 转换为 AptosCoin 单位
+        // const res = await fetch(
+        //   `https://fullnode.mainnet.aptoslabs.com/v1/accounts/${account.address}/resource/0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>`
+        // );
+        // const data = await res.json();
+        // setBalance(Number(data?.data?.coin?.value) / 1e8); 
       } catch (error) {
         console.error("Failed to fetch balance:", error);
       }

@@ -16,13 +16,14 @@ export const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use((config) => {
   // Get token from the correct storage
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  
+  console.log('Token:', token);
+  config.headers = config.headers || {};
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   } else {
     console.warn('No token found');
   }
-  
+
   return config;
 }, (error) => {
   return Promise.reject(error);
