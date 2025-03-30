@@ -4,6 +4,7 @@ import { SceneManager } from "./tavern/sceneManager";
 import { AudioManager } from "./tavern/audioManager";
 import { movementController } from "./tavern/moveController";
 import { BarmanInteraction } from "./tavern/barmanInteraction";
+import { calculateGameSize } from "../utils/screenUtils";
 
 export default class TavernScene extends Phaser.Scene {
     private sceneManager!: SceneManager;
@@ -19,8 +20,12 @@ export default class TavernScene extends Phaser.Scene {
         // 设置场景尺寸数据
         // this.data.set('bgWidth', 550);
         // this.data.set('bgHeight', 1195);
-        this.data.set("bgWidth", Math.max(window.innerWidth, 1600));
-        this.data.set("bgHeight", Math.max(window.innerHeight, 900));
+        const { width, height } = calculateGameSize(
+            Math.max(window.innerWidth, 1600),
+            Math.max(window.innerHeight, 900)
+        );
+        this.data.set("bgWidth", width);
+        this.data.set("bgHeight", height);
 
         // 初始化场景管理器
         this.sceneManager = new SceneManager(this);

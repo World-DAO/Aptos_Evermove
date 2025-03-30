@@ -14,7 +14,7 @@ export class movementController {
   // 记录当前要走的目标点（像素坐标）
   private currentTarget?: { x: number; y: number };
   // 移动速度
-  private moveSpeed = 150;
+  private moveSpeed = 400;
 
   // 记录当前移动的方向（"left" / "right" / "up" / "down"）
   private currentDir?: string;

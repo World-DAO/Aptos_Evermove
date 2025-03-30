@@ -1,4 +1,5 @@
 import { Scene } from "phaser";
+import { calculateGameSize } from "../utils/screenUtils";
 
 export class preloadScene extends Scene {
     private progressBar!: Phaser.GameObjects.Graphics;
@@ -139,23 +140,24 @@ export class preloadScene extends Scene {
         });
         this.load.image("user", "animation/david.png");
         this.load.image("barwoman", "animation/lucy.png");
-        this.load.audio("theme", [
-            "audio/background.mp3",
-        ]);
-        this.load.image('button_content', 'img/button_content.png');
-        this.load.image('button_write', 'img/button_write.png');
-        this.load.image('button_chat', 'img/button_chat.png');
+        this.load.audio("theme", ["audio/background.mp3"]);
+        this.load.image("button_content", "img/button_content.png");
+        this.load.image("button_write", "img/button_write.png");
+        this.load.image("button_chat", "img/button_chat.png");
         this.load.image("bar_menu", "img/bar_menu.png");
         this.load.image("bar_bottle", "img/bar_bottle.png");
         this.load.image("sui_logo", "img/sui_logo.png");
         this.registry.set("gridSize", 50);
         // debugger;
-        const width = Math.max(window.innerWidth, 1600)
-        const height = Math.max(window.innerHeight, 900)
+        const { width, height } = calculateGameSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+        console.log(width, height);
         const gridArray = new Array(Math.ceil(width / 50))
             .fill(null)
             .map(() => new Array(Math.ceil(height / 50)).fill(0));
-
+        console.log(gridArray);
         this.registry.set("grid", gridArray);
     }
 }

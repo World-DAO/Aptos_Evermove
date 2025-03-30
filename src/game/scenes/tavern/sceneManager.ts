@@ -192,16 +192,17 @@ export class SceneManager {
     }
 
     private createCharacters() {
+        const scaleFactor = this.scene.data.get("bgWidth") / 1600;
         // 创建玩家
         this.player = new Player(
             this.scene,
-            20 * this.gridSize,
-            4 * this.gridSize,
+            20 * this.gridSize * scaleFactor,
+            4 * this.gridSize * scaleFactor,
             "user"
         );
         this.player.sprite.setDisplaySize(
-            this.gridSize * 1.6,
-            this.gridSize * 3.8
+            this.gridSize * 1.6 * scaleFactor,
+            this.gridSize * 3.8 * scaleFactor
         );
 
         this.cursors = this.scene.input.keyboard!.createCursorKeys();
@@ -213,14 +214,14 @@ export class SceneManager {
         // 创建酒保
         this.barman = new Barman(
             this.scene,
-            7 * this.gridSize,
-            6 * this.gridSize,
+            7 * this.gridSize * scaleFactor,
+            6 * this.gridSize * scaleFactor,
             "barwoman"
         );
         this.barman.sprite.setInteractive();
         this.barman.sprite.setDisplaySize(
-            this.gridSize * 1.6,
-            this.gridSize * 3
+            this.gridSize * 1.6 * scaleFactor,
+            this.gridSize * 3 * scaleFactor
         );
 
         this.barman.sprite.on("pointerover", () => {
