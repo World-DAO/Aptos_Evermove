@@ -3,6 +3,9 @@ import { EventBus } from "@/game/EventBus";
 import { cn } from "@/lib/utils";
 import { useContent } from "@/hooks/useContent";
 import { useGenericSpaceKeyDown } from "@/hooks/useGenericSpaceKeyDown";
+import { Aptos, Network } from "@aptos-labs/ts-sdk";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { executePublishAndEarnTransaction } from "../game/utils/executePublishAndEarnTransaction";
 
 interface WriteWindowProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -11,9 +14,12 @@ export function WriteWindow({ className }: WriteWindowProps) {
     const [writeTitle, setWriteTitle] = useState("");
     const [writeContent, setWriteContent] = useState("");
     const { createStory, loading } = useContent();
+    const { signAndSubmitTransaction, account } = useWallet();
 
     const handleTitleKeyDown = useGenericSpaceKeyDown(setWriteTitle);
     const handleContentKeyDown = useGenericSpaceKeyDown(setWriteContent);
+
+    const aptos = new Aptos();
 
     // Listen for write button click
     useEffect(() => {
@@ -39,15 +45,36 @@ export function WriteWindow({ className }: WriteWindowProps) {
         }
     };
 
-    // 新增的 handlePublishAndEarn，传入 isPay 为 true
+    // 添加了调用合约函数的逻辑，尚未测试是否可以跑通。等合约完成需要修改一下这里
     const handlePublishAndEarn = async () => {
         if (!writeTitle.trim() || !writeContent.trim()) return;
-
-        const result = await createStory(writeTitle, writeContent, true);
-        if (result.success) {
-            setWriteTitle("");
-            setWriteContent("");
-            setIsWriteOpen(false);
+        if (!account) {
+            alert("Wallet not connected!");
+            return;
+        }
+        try {
+            const success = await executePublishAndEarnTransaction(
+                signAndSubmitTransaction,
+                { title: writeTitle, content: writeContent },
+                aptos,
+            );
+            if (success) {
+                const result = await createStory(
+                    writeTitle,
+                    writeContent,
+                    true,
+                );
+                if (result.success) {
+                    setWriteTitle("");
+                    setWriteContent("");
+                    setIsWriteOpen(false);
+                }
+            } else {
+                alert("Publish and Earn transaction failed");
+            }
+        } catch (error: any) {
+            console.error("Publish and Earn error:", error);
+            alert("Publish and Earn encountered an error: " + error.message);
         }
     };
 
@@ -132,4 +159,3 @@ export function WriteWindow({ className }: WriteWindowProps) {
         </div>
     );
 }
-
