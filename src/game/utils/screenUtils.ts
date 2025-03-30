@@ -17,8 +17,8 @@ export function calculateGameSize(
 
     // 如果当前窗口大于基准尺寸，则按比例放大
     if (width > baseWidth || height > baseHeight) {
-        width = 2400
-        height = 1350
+        width = 2240
+        height = 1260
     } else {
         // 如果小于基准尺寸，使用基准尺寸
         width = baseWidth;
