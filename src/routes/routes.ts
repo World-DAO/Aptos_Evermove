@@ -19,6 +19,7 @@ function authenticate(req: Request, res: Response, next: NextFunction) {
         return res.status(401).json({ error: "No JWT provided." });
     }
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+    console.log(`Token: ${token}`);
     const decoded = verifyJWT(token);
     if (!decoded || !("address" in decoded)) {
         return res.status(401).json({ error: "Invalid JWT." });
@@ -412,7 +413,53 @@ router.post("/stories/unmark_received", authenticate, async (req: Request, res: 
     }
 });
 
+/**
+ * 获取故事的合约地址
+ */
+router.get("/stories/contract_address/:storyId", authenticate, async (req: Request, res: Response) => {
+    try {
+        const { storyId } = req.params;
+        if (!storyId) {
+            return res.status(400).json({ success: false, reason: "storyId is required." });
+        }
+        const result = await StoryService.getContractAddress(storyId);
+        res.json({ success: true, result });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
 
+/**
+ * 根据合约地址获取故事
+ */
+router.get("/stories/story_by_contract/:contractAddress", authenticate, async (req: Request, res: Response) => {
+    try {
+        const { contractAddress } = req.params;
+        if (!contractAddress) {
+            return res.status(400).json({ success: false, reason: "contractAddress is required." });
+        }
+        const result = await StoryService.getStoryByContractAddress(contractAddress);
+        res.json({ success: true, result });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
+/**
+ * 更新故事的合约地址
+ */
+router.post("/stories/contract_address", authenticate, async (req: Request, res: Response) => {
+    try {
+        const { storyId, contractAddress } = req.body;
+        if (!storyId || !contractAddress) {
+            return res.status(400).json({ success: false, reason: "storyId and contractAddress are required." });
+        }
+        const result = await StoryService.updateStoryContractAddress(storyId, contractAddress);
+        res.json({ success: true, result });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
 
 /**
  * ------------------------------
@@ -691,4 +738,6 @@ router.get("/stories/payment_pending", authenticate, async (req: Request, res: R
         res.status(500).json({ success: false, reason: error.message });
     }
 });
+
+
 export default router;

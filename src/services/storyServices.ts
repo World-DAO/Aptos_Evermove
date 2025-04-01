@@ -1,6 +1,6 @@
 // src/services/storyService.ts
 import { addUserPublishedStory, addUserReceivedStory, addUserSentWhiskey, getUserState } from '../database/stateDB';
-import { publishStory, getRandomStory, getStoryByAuthor, addWhiskeyPoints, getStoryById, deleteStory, getPaymentPendingStories } from '../database/storyDB';
+import { publishStory, getRandomStory, getStoryByAuthor, addWhiskeyPoints, getStoryById, deleteStory, getPaymentPendingStories, getStoryByContractAddress, getStoryContractAddress, updateStoryContractAddress } from '../database/storyDB';
 import { getUserByAddress, getUserPoints, markLikedStory, markReceivedStory, updateUserPoints } from '../database/userDB';
 import { STORY_LIMITS } from "../constants";
 import { Story } from '../types/Story';
@@ -154,4 +154,26 @@ export class StoryService {
     static async unmarkReceivedStory(address: string, storyId: string) {
         await this.unmarkReceivedStory(address, storyId);
     }
+
+    static async getContractAddress(storyId: string): Promise<string> {
+        const res = await getStoryContractAddress(storyId);
+        if (!res) {
+            throw new Error("Story not found");
+        }
+        return res;
+    }
+
+    static async getStoryByContractAddress(contractAddress: string): Promise<Story | null> {
+        const story = await getStoryByContractAddress(contractAddress);
+        if (!story) {
+            throw new Error("Story not found");
+        }
+        return story;
+    }
+
+    static async updateStoryContractAddress(storyId: string, contractAddress: string): Promise<boolean> {
+        return updateStoryContractAddress(storyId, contractAddress);
+    }
 }
+
+

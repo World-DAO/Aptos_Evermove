@@ -12,7 +12,7 @@ interface MyJwtPayload extends JwtPayload {
  * 生成 JWT
  */
 export function generateJWT(payload: object): string {
-    return jwt.sign(payload, JWT_SECRET!, { expiresIn: '1h' });
+    return jwt.sign(payload, JWT_SECRET!);
 }
 
 /**
@@ -20,13 +20,20 @@ export function generateJWT(payload: object): string {
  */
 export function verifyJWT(token: string): MyJwtPayload | null {
     try {
+        console.log("🔍 正在验证 Token:", token);
+        console.log("🔑 使用的 JWT_SECRET:", JWT_SECRET);
+
         const decoded = jwt.verify(token, JWT_SECRET!);
+        console.log("✅ 解析成功:", decoded);
+
         if (typeof decoded === 'object' && decoded !== null && 'address' in decoded) {
             return decoded as MyJwtPayload;
         }
+
+        console.error("❌ 解析失败，缺少 address 字段:", decoded);
         return null;
     } catch (error) {
-        console.error('JWT verification failed:', error);
+        console.error("❌ JWT verification failed:", error);
         return null;
     }
 }

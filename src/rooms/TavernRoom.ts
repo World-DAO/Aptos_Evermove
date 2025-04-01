@@ -27,6 +27,7 @@ export class TavernRoom extends Room<TavernState> {
     this.setState(new TavernState());
 
     // 注册消息处理器
+    this.onMessage("jwtLogin", this.handleJWTLogin.bind(this));
     this.onMessage("userLogin", this.handleLogin.bind(this));
     this.onMessage("loginSignature", this.handleLoginSignature.bind(this));
     this.onMessage("publishStory", this.handlePublishStory.bind(this));
@@ -93,6 +94,50 @@ export class TavernRoom extends Room<TavernState> {
     }
 
     return address;
+  }
+
+  /**
+   * 处理 JWT 登录请求
+   */
+  async handleJWTLogin(client: Client, data: any) {
+    const { token } = data;
+    if (!token) {
+      client.send("loginResponse", { success: false, reason: "Token is required." });
+      return;
+    }
+
+    try {
+      // 验证 JWT
+      const address = this.verifyClientJWT(token);
+      if (!address) {
+        client.send("loginResponse", { success: false, reason: "Invalid token." });
+        return;
+      }
+
+      // 设置客户端的 auth 信息
+      client.auth = { jwt: token };
+
+      // 创建玩家实例
+      const player = new Player();
+      player.address = address;
+      this.state.players.set(client.sessionId, player);
+
+      // 读取用户信息
+      const user = await UserService.getUser(address);
+      const userState = await UserService.getDailyState(address);
+
+      // 发送登录成功响应
+      client.send("loginResponse", {
+        success: true,
+        token,
+        user,
+        userState
+      });
+
+      console.log(`Player ${address} logged in with JWT, session ${client.sessionId}`);
+    } catch (error: any) {
+      client.send("loginResponse", { success: false, reason: error.message });
+    }
   }
 
   /**
@@ -189,7 +234,7 @@ export class TavernRoom extends Room<TavernState> {
       const user = await UserService.getUser(addressStr);
       const userState = await UserService.getDailyState(addressStr);
       // 签名验证通过，生成 JWT
-      const token = generateJWT({ addressStr });
+      const token = generateJWT({ address: addressStr });
       client.auth = { jwt: token };
       // 发送 JWT 给前端
       client.send("loginResponse", { success: true, token });

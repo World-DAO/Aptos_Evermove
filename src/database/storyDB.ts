@@ -8,9 +8,9 @@ import { query } from './index';
  * - 将 SQLite 的 CURRENT_TIMESTAMP 用于 created_at 字段
  */
 export async function publishStory(
-    authorAddress: string, 
-    title: string, 
-    content: string, 
+    authorAddress: string,
+    title: string,
+    content: string,
     isPay: boolean = false  // 新增参数，默认 false 表示未支付
 ): Promise<Story> {
     // 将 isPay 转换为 paymentState 状态：true 转为 1，false 转为 0
@@ -185,4 +185,44 @@ export async function getPaymentPendingStories(): Promise<Story[]> {
         'SELECT * FROM Story WHERE paymentState = 1'
     );
     return rows;
+}
+
+/**
+ * 更新故事的合约地址
+ */
+export async function updateStoryContractAddress(storyId: string, contractAddress: string): Promise<boolean> {
+    try {
+        await query(
+            'UPDATE Story SET contract_address = ? WHERE id = ?',
+            [contractAddress, storyId]
+        );
+        return true;
+    } catch (error) {
+        console.error('Error updating story contract address:', error);
+        return false;
+    }
+}
+
+/**
+ * 获取故事的合约地址
+ */
+export async function getStoryContractAddress(storyId: string): Promise<string | null> {
+    const rows = await query(
+        'SELECT contract_address FROM Story WHERE id = ?',
+        [storyId]
+    );
+    return rows[0]?.contract_address || null;
+}
+
+/**
+ * 根据合约地址获取故事
+ * @param contractAddress 合约地址
+ * @returns 故事对象，如果未找到则返回 null
+ */
+export async function getStoryByContractAddress(contractAddress: string): Promise<Story | null> {
+    const rows = await query(
+        'SELECT * FROM Story WHERE contract_address = ?',
+        [contractAddress]
+    );
+    return rows[0] || null;
 }
