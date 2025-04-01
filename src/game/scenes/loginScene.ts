@@ -13,7 +13,6 @@ interface LoginResponse {
 
 export class loginScene extends Scene {
     private loginText: Phaser.GameObjects.Text;
-    private connectButtonContainer: Phaser.GameObjects.DOMElement;
 
     constructor() {
         super("login");
@@ -21,155 +20,221 @@ export class loginScene extends Scene {
 
     preload() {
         // Load background image
-        this.load.image("cover", "img/cover.png");
+        this.load.image("cover", "img/cover_new.png");
+        this.load.image("logo", "favicon.png");
     }
 
     create() {
         const { width, height } = this.scale;
 
-        // 1. 添加背景图并调整亮度
+        // const topOverlay = this.add.rectangle(
+        //     0, 0,
+        //     width, height / 6,
+        //     0x000000,
+        //     0.7
+        // )
+        //     .setOrigin(0, 0)
+        //     .setDepth(5);
+
+        // // 调整Logo位置（确保在蒙版区域内）
+        // const logo = this.add.image(20, 20, "logo")  // 保留10px边距
+        //     .setOrigin(0, 0)
+        //     .setScale(0.2)
+        //     .setDepth(10);
+
+        // 计算图片缩放比例（保持原始宽高比）
+        const bgTexture = this.textures.get('cover');
+        const scaleX = width / bgTexture.source[0].width;
+        const scaleY = height / bgTexture.source[0].height;
+        const scale = Math.max(scaleX, scaleY); // 取最大缩放值（覆盖模式）
+
         const background = this.add
             .image(width / 2, height / 2, "cover")
-            .setOrigin(0.5)
-            .setDisplaySize(width, height)
-            .setTint(0x666666); // 使用较暗的色调，可以调整这个值来控制亮度
+            .setScale(scale)
+            .setTint(0x666666);
 
-        // 2. 添加黑色蒙版
+        // 添加黑色蒙版
         const overlay = this.add.graphics();
         overlay.fillStyle(0x000000, 0.05);
         overlay.fillRect(0, 0, width, height);
 
-        // 3. 添加登录按钮
-
-        // 添加按钮悬停效果
-
-        // Get full screen size
         const fullWidth = window.innerWidth;
         const fullHeight = window.innerHeight;
 
-        // Add title with elegant style
-        const title = this.add
-            .text(fullWidth / 2, fullHeight * 0.4, "Welcome to MOONCL", {
-                fontSize: "48px",
-                color: "#ffffff",
-                fontFamily: "Georgia, serif",
-                stroke: "#000000",
-                strokeThickness: 4,
-                shadow: {
-                    offsetX: 2,
-                    offsetY: 2,
-                    color: "#000000",
-                    blur: 2,
-                    stroke: true,
-                    fill: true,
-                },
-            })
-            .setOrigin(0.5);
+        const createGradientText = (scene: Phaser.Scene, x: number, y: number, text: string, size: string) => {
+            const fontFamily = 'sans-serif';
+            const container = scene.add.container(x, y);
 
-        // Add title animation effect
-        this.tweens.add({
-            targets: title,
-            scale: { from: 0.95, to: 1.05 },
-            duration: 2000,
-            ease: "Sine.easeInOut",
-            yoyo: true,
-            repeat: -1,
-        });
+            // 分割文本
+            const prefix = "Welcome to ";
+            const highlight = "Mooncl";
+            const style = {
+                fontSize: size,
+                fontFamily,
+                fontWeight: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2
+            };
 
-        // Dynamically create ConnectButton container
-        this.connectButtonContainer = this.add
-            .dom(fullWidth / 2, fullHeight * 0.6)
-            .createElement("div");
+            // 创建前缀文本 (白色)
+            const prefixText = scene.add.text(0, 0, prefix, {
+                ...style,
+                color: '#ffffff'
+            });
+            container.add(prefixText);
 
-        // Create elegant button background
+            // 创建Mooncl渐变文本
+            const gradientColors = ['#8a2be2', '#5e72e4', '#4285F4'];
+
+            // 先创建所有字符测量总宽度
+            let highlightWidth = 0;
+            const charTexts: Phaser.GameObjects.Text[] = [];
+            for (let i = 0; i < highlight.length; i++) {
+                const charText = scene.add.text(0, 0, highlight[i], style);
+                highlightWidth += charText.width;
+                charTexts.push(charText);
+                charText.destroy(); // 只用于测量
+            }
+
+            // 计算起始位置 (确保整体居中)
+            const totalWidth = prefixText.width + highlightWidth;
+            prefixText.setX(-totalWidth / 2);
+
+            // 实际渲染字符
+            let currentX = prefixText.x + prefixText.width;
+            for (let i = 0; i < highlight.length; i++) {
+                const color = Phaser.Display.Color.Interpolate.ColorWithColor(
+                    Phaser.Display.Color.ValueToColor(gradientColors[0]),
+                    Phaser.Display.Color.ValueToColor(gradientColors[gradientColors.length - 1]),
+                    highlight.length,
+                    i
+                );
+
+                const charText = scene.add.text(
+                    currentX,
+                    0,
+                    highlight[i],
+                    {
+                        ...style,
+                        color: Phaser.Display.Color.RGBToString(color.r, color.g, color.b)
+                    }
+                );
+                container.add(charText);
+                currentX += charText.width; // 使用实际字符宽度
+            }
+
+            // // 添加动画效果
+            // scene.tweens.add({
+            //     targets: container,
+            //     scaleX: { from: 0.98, to: 1.02 },
+            //     scaleY: { from: 0.98, to: 1.02 },
+            //     duration: 2000,
+            //     ease: 'Sine.easeInOut',
+            //     yoyo: true,
+            //     repeat: -1
+            // });
+
+            // 添加发光效果
+            container.list.forEach((child) => {
+                if (child instanceof Phaser.GameObjects.Text) {
+                    child.setShadow(2, 2, 'rgba(100, 200, 255, 0.7)', 3, true, true);
+                }
+            });
+
+            return container;
+        };
+
+        // 使用方式 (替换原来的title创建代码)
+        const title = createGradientText(this, width / 2, height * 0.25, "Welcome to Mooncl", "66px");
+
+        // 移除原来的DOM元素容器（不需要了）
+        // this.connectButtonContainer.destroy(); // 如果之前创建过的话
+
         const buttonWidth = 240;
         const buttonHeight = 60;
+        const buttonX = width / 2;
+        const buttonY = height * 0.6;
+
+        // 创建渐变按钮
         const button = this.add.graphics();
 
-        // Button background - solid color with rounded corners
-        button.lineStyle(2, 0xffffff, 1);
-        button.fillStyle(0x4a90e2, 1);
-        button.fillRoundedRect(
-            fullWidth / 2 - buttonWidth / 2,
-            fullHeight * 0.6 - buttonHeight / 2,
-            buttonWidth,
-            buttonHeight,
-            15
-        );
-        button.strokeRoundedRect(
-            fullWidth / 2 - buttonWidth / 2,
-            fullHeight * 0.6 - buttonHeight / 2,
-            buttonWidth,
-            buttonHeight,
-            15
-        );
+        // 创建渐变填充
+        const radius = 15; // 圆角半径
+        const canvas = document.createElement('canvas');
+        canvas.width = buttonWidth;
+        canvas.height = buttonHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error('Could not get 2D context from canvas');
+        }
 
-        button
-            .setInteractive(
-                new Phaser.Geom.Rectangle(
-                    fullWidth / 2 - buttonWidth / 2,
-                    fullHeight * 0.6 - buttonHeight / 2,
-                    buttonWidth,
-                    buttonHeight
-                ),
-                Phaser.Geom.Rectangle.Contains
-            )
-            .on("pointerover", () => {
-                button.clear();
-                button.lineStyle(2, 0xffffff, 1);
-                button.fillStyle(0x357abd, 1);
-                button.fillRoundedRect(
-                    fullWidth / 2 - buttonWidth / 2,
-                    fullHeight * 0.6 - buttonHeight / 2,
-                    buttonWidth,
-                    buttonHeight,
-                    15
-                );
-                button.strokeRoundedRect(
-                    fullWidth / 2 - buttonWidth / 2,
-                    fullHeight * 0.6 - buttonHeight / 2,
-                    buttonWidth,
-                    buttonHeight,
-                    15
-                );
-            })
-            .on("pointerout", () => {
-                button.clear();
-                button.lineStyle(2, 0xffffff, 1);
-                button.fillStyle(0x4a90e2, 1);
-                button.fillRoundedRect(
-                    fullWidth / 2 - buttonWidth / 2,
-                    fullHeight * 0.6 - buttonHeight / 2,
-                    buttonWidth,
-                    buttonHeight,
-                    15
-                );
-                button.strokeRoundedRect(
-                    fullWidth / 2 - buttonWidth / 2,
-                    fullHeight * 0.6 - buttonHeight / 2,
-                    buttonWidth,
-                    buttonHeight,
-                    15
-                );
-            })
-            .on("pointerdown", () => this.handleLogin());
+        // 创建圆角渐变按钮
+        ctx.beginPath();
+        ctx.moveTo(radius, 0);
+        ctx.lineTo(buttonWidth - radius, 0);
+        ctx.quadraticCurveTo(buttonWidth, 0, buttonWidth, radius);
+        ctx.lineTo(buttonWidth, buttonHeight - radius);
+        ctx.quadraticCurveTo(buttonWidth, buttonHeight, buttonWidth - radius, buttonHeight);
+        ctx.lineTo(radius, buttonHeight);
+        ctx.quadraticCurveTo(0, buttonHeight, 0, buttonHeight - radius);
+        ctx.lineTo(0, radius);
+        ctx.quadraticCurveTo(0, 0, radius, 0);
+        ctx.closePath();
 
-        // Add button text with elegant style
-        this.loginText = this.add
-            .text(fullWidth / 2, fullHeight * 0.6, "Connect Wallet", {
-                fontSize: "26px",
-                color: "#ffffff",
-                fontFamily: "Arial, sans-serif",
-                fontStyle: "bold",
-                shadow: {
-                    offsetX: 1,
-                    offsetY: 1,
-                    color: "#000000",
-                    blur: 2,
-                    fill: true,
-                },
+        // 创建渐变
+        const grd = ctx.createLinearGradient(0, 0, buttonWidth, 0);
+        grd.addColorStop(0, '#8a2be2'); // 紫色
+        grd.addColorStop(1, '#4285F4'); // 蓝色
+        ctx.fillStyle = grd;
+        ctx.fill();
+
+        // 创建渐变纹理
+        const buttonTexture = this.textures.addCanvas('buttonTexture', canvas);
+        const buttonSprite = this.add.sprite(
+            buttonX,
+            buttonY,
+            'buttonTexture'
+        ).setDisplaySize(buttonWidth, buttonHeight);
+
+        // 设置按钮的交互
+        buttonSprite
+            .setInteractive()
+            .on('pointerover', () => {
+                // 悬停时轻微放大
+                this.tweens.add({
+                    targets: [buttonSprite, this.loginText], // 同时缩放按钮和文字
+                    scaleX: 1.05,
+                    scaleY: 1.05,
+                    duration: 200,
+                    ease: 'Sine.easeOut'
+                });
             })
-            .setOrigin(0.5);
+            .on('pointerout', () => {
+                // 恢复原始大小
+                this.tweens.add({
+                    targets: [buttonSprite, this.loginText], // 同时缩放按钮和文字
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 200,
+                    ease: 'Sine.easeOut'
+                });
+            })
+            .on('pointerdown', () => this.handleLogin());
+
+        // 更新按钮文字样式
+        this.loginText = this.add.text(buttonX, buttonY, "Enter", {
+            fontSize: "26px",
+            color: "#ffffff",
+            fontFamily: "Arial, sans-serif",
+            fontStyle: "bold",
+            shadow: {
+                offsetX: 1,
+                offsetY: 1,
+                color: "rgba(0, 0, 0, 0.5)",
+                blur: 3,
+                fill: true
+            }
+        }).setOrigin(0.5).setDepth(1);
 
         // Listen for login response
         EventBus.on("phaser_loginResponse", (response: LoginResponse) => {

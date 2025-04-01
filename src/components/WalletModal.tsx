@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { Button } from "@/components/ui/button";
 
+
 interface WalletModalProps {
     onClose: () => void;
     onGameStart: () => void;
@@ -12,22 +13,33 @@ export function WalletModal({ onClose, onGameStart }: WalletModalProps) {
     const [error, setError] = useState<string>("");
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center z-[1000] bg-black/85 backdrop-blur-[10px]">
-            <div className="w-[400px] bg-[rgba(20,20,20,0.95)] p-[30px] rounded-xl shadow-[0_0_10px_rgba(0,255,255,0.7)] 
-                          text-center border-2 border-[rgba(0,255,255,0.5)]">
+        <div
+            className="fixed inset-0 flex items-center justify-center z-[1000] backdrop-blur-[10px]">
+            <div className="absolute inset-0">
+                <img
+                    src="/img/cover_new.png"
+                    alt="Background"
+                    className="w-full h-full object-cover"
+                />
+            </div>
+            {/* 深色半透明遮罩层，确保文字可读性 */}
+            <div className="absolute inset-0 bg-black/70"></div>
+
+            {/* 内容容器 */}
+            <div className="relative z-10 w-[400px] bg-[rgba(20,20,20,0.95)] p-[30px] rounded-xl 
+                          shadow-[0_0_10px_rgba(0,255,255,0.7)] text-center border-2 border-[rgba(0,255,255,0.5)]">
                 <h2 className="text-[22px] font-bold mb-[15px] text-[#0ff]">
                     🔮 Select Wallet
                 </h2>
 
-                {/* 如果钱包已连接，显示已连接的钱包信息 */}
                 {connected ? (
                     <div className="mb-4">
                         <p className="text-[#0f0] font-bold text-[16px]">
-                            ✅ {account?.address.toString().slice(0, 6)}...
+                            ✅ {account?.address?.toString().slice(0, 6)}...
                         </p>
                         <button
                             onClick={async () => {
-                                disconnect();
+                                await disconnect();
                             }}
                             className="mt-3 w-full p-[10px] text-[14px] font-bold rounded cursor-pointer 
                                       border-2 border-[#ff4500] bg-[rgba(255,69,0,0.2)] text-[#ff4500]
@@ -37,7 +49,6 @@ export function WalletModal({ onClose, onGameStart }: WalletModalProps) {
                         </button>
                     </div>
                 ) : (
-                    // 未连接时，显示所有钱包选项
                     <ul className="list-none p-0 m-0">
                         {wallets.length > 0 ? (
                             wallets.map((wallet) => (
@@ -45,7 +56,7 @@ export function WalletModal({ onClose, onGameStart }: WalletModalProps) {
                                     <button
                                         onClick={async () => {
                                             try {
-                                                connect(wallet.name);
+                                                await connect(wallet.name);
                                                 console.log(`✅ Connected: ${wallet.name}`);
                                             } catch (err) {
                                                 setError("Failed to connect wallet");
@@ -67,7 +78,6 @@ export function WalletModal({ onClose, onGameStart }: WalletModalProps) {
                     </ul>
                 )}
 
-                {/* 进入游戏按钮 */}
                 <Button
                     onClick={() => {
                         if (account?.address) {
@@ -86,7 +96,6 @@ export function WalletModal({ onClose, onGameStart }: WalletModalProps) {
                     🎮 Enter Game
                 </Button>
 
-                {/* 错误信息 */}
                 {error && <p className="text-red-500 mt-3">{error}</p>}
             </div>
         </div>
