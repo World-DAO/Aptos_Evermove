@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { EventBus } from "@/game/EventBus";
 import { cn } from "@/lib/utils";
 import { useContent } from '@/hooks/useContent';
-import { useGenericSpaceKeyDown } from "@/hooks/useGenericSpaceKeyDown";
 
 interface Story {
     id: number;
@@ -29,8 +28,6 @@ export function ContentWindow({ className }: ContentWindowProps) {
         sendReply 
     } = useContent();
 
-    const handleReplyText = useGenericSpaceKeyDown(setReplyText);
-
     // Fetch stories when component mounts
     useEffect(() => {
         if (isContentOpen) {
@@ -54,7 +51,19 @@ export function ContentWindow({ className }: ContentWindowProps) {
     // Show loading state
     if (isContentOpen && isLoading) {
         return (
-            <div className="fixed inset-0 flex items-center justify-center z-50">
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backdropFilter: 'blur(50px)',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                zIndex: 999
+            }}>
                 <div className="text-white">Loading stories...</div>
             </div>
         );
@@ -66,7 +75,19 @@ export function ContentWindow({ className }: ContentWindowProps) {
     // Show error state if no stories
     if (!isLoading && stories.length === 0) {
         return (
-            <div className="fixed inset-0 flex items-center justify-center z-50">
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backdropFilter: 'blur(50px)',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                zIndex: 999
+            }}>
                 <div className="text-white">No stories available</div>
             </div>
         );
@@ -97,127 +118,269 @@ export function ContentWindow({ className }: ContentWindowProps) {
     };
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className={cn(
-                "w-[717px] h-[737px] relative flex flex-col",
-                "bg-[#8361A0]/50 backdrop-blur-[24px]",
-                "rounded-[24px]",
-                className
-            )}>
+        <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',  // Overlay
+            zIndex: 999
+        }}>
+            <div style={{
+                width: '780px',
+                height: '700px',
+                backgroundColor: 'rgba(26, 26, 63, 0.6)',  // #1A1A3F with 60% opacity
+                border: '1px solid rgba(255, 255, 255, 0.2)',  // White border with 20% opacity
+                borderRadius: '36px',
+                backdropFilter: 'blur(18px)',
+                zIndex: 1000,
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '24px',
+                position: 'relative'
+            }}>
                 {/* Content */}
                 <div className="flex-1 p-12">
-                    <h2 className="text-white text-2xl mb-4">{currentStory.title}</h2>
-                    <div className="text-white/70 mb-6">
-                        From: {currentStory.author_address.slice(0, 6)}...{currentStory.author_address.slice(-4)}
+                    <h2 style={{
+                        fontFamily: 'Montserrat',
+                        fontWeight: 700,
+                        fontSize: '32px',
+                        lineHeight: '32px',
+                        letterSpacing: '0',
+                        color: '#FFFFFF',
+                        marginBottom: '16px'
+                    }}>
+                        Hello! New friends👋
+                    </h2>
+                    <div style={{
+                        fontFamily: 'Montserrat',
+                        fontWeight: 400,
+                        fontSize: '12px',
+                        lineHeight: '100%',
+                        letterSpacing: '0',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        marginBottom: '24px',
+                        paddingLeft: '10px'
+                    }}>
+                        From: {currentStory.author_address}
                     </div>
-                    <div className="text-white text-lg leading-relaxed whitespace-pre-wrap break-words">
+                    <div style={{
+                        fontFamily: 'Montserrat',
+                        fontWeight: 400,
+                        fontSize: '20px',
+                        lineHeight: '34px',
+                        letterSpacing: '0',
+                        color: '#FFFFFF',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word'
+                    }}>
                         {currentStory.story_content}
                     </div>
                 </div>
 
                 {/* Action Buttons - Bottom Bar */}
-                <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-6">
+                <div style={{
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    marginTop: 'auto',  // Push to bottom
+                    paddingLeft: '24px',  // Match content padding
+                    paddingBottom: '24px'
+                }}>
                     <button
                         onClick={handleLike}
                         disabled={likedStories.has(currentStory.id)}
-                        className={cn(
-                            "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200",
-                            likedStories.has(currentStory.id)
-                                ? "bg-[#722F37] scale-95 cursor-not-allowed" // Darker red when liked
-                                : "bg-[#83CEDD] hover:bg-[#94DFF0] hover:scale-105" // Original style
-                        )}
+                        style={{
+                            width: '276px',
+                            height: '72px',
+                            background: 'linear-gradient(93.06deg, #FF39E0 0%, #AE4FFF 51.56%, #30B3D4 100%)',
+                            borderRadius: '24px',
+                            border: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            cursor: 'pointer'
+                        }}
                     >
-                        <span className={cn(
-                            "text-2xl transition-transform duration-200",
-                            likedStories.has(currentStory.id) && "opacity-50"
-                        )}>
-                            🍷
+                        <img src="img/wineButton.png" alt="Send Cheers" />
+                        <span style={{ 
+                            color: '#FFFFFF',
+                            fontFamily: 'Montserrat',
+                            fontSize: '20px',
+                            fontWeight: 700
+                        }}>
+                            Send a Cheer
                         </span>
                     </button>
+
                     <button
                         onClick={handleReply}
-                        className="px-8 py-2 bg-[#83CEDD] rounded-xl
-                                text-white hover:bg-[#94DFF0] transition-colors
-                                font-medium text-lg"
+                        style={{
+                            width: '180px',
+                            height: '72px',
+                            background: '#1A1A3F',
+                            border: '1px solid rgba(255, 255, 255, 0.4)',  // 40% opacity white border
+                            borderRadius: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
+                            position: 'relative',
+     
+                        }}
                     >
-                        REPLY
+                        <img src="img/replyButton.png" alt="Reply" />
+                        <span style={{ 
+                            color: '#FFFFFF',
+                            fontFamily: 'Montserrat',
+                            fontSize: '20px',
+                            fontWeight: 700
+                        }}>
+                            Reply
+                        </span>
                     </button>
+
                     <button
                         onClick={handleNext}
-                        className="px-8 py-2 bg-[#83CEDD] rounded-xl
-                                text-white hover:bg-[#94DFF0] transition-colors
-                                font-medium text-lg"
+                        style={{
+                            width: '180px',
+                            height: '72px',
+                            background: '#1A1A3F',
+                            border: '1px solid rgba(255, 255, 255, 0.4)',  // 40% opacity white border
+                            borderRadius: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
+                            position: 'relative',
+                        }}
                     >
-                        NEXT
+                        <img src="img/nextButton.png" alt="Next" />
+                        <span style={{ 
+                            color: '#FFFFFF',
+                            fontFamily: 'Montserrat',
+                            fontSize: '20px',
+                            fontWeight: 700
+                        }}>
+                            Next
+                        </span>
                     </button>
                 </div>
 
                 {/* Close Button */}
                 <button
-                    onClick={() => setIsContentOpen(false)}
-                    className="absolute top-6 right-6 w-8 h-8 
-                            text-white/70 hover:text-white 
-                            transition-colors text-2xl"
+                    onClick={() => {
+                        setIsContentOpen(false);
+                        EventBus.emit("close-content");
+                    }}
+                    style={{
+                        position: 'absolute',
+                        top: '24px',
+                        right: '24px',
+                        width: '42px',
+                        height: '42px',
+                        background: '#1A1A3F',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '100px',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '24px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
                 >
                     ×
                 </button>
 
-                {/* Reply Window - Shows when isReplyOpen is true */}
+                {/* Reply Window */}
                 {isReplyOpen && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-[717px] h-[300px] relative flex flex-col
-                                    bg-[#8361A0]/80 backdrop-blur-[24px] 
-                                    rounded-[24px] border border-[#4EEAFF]/20">
-                            {/* Header */}
-                            <div className="flex justify-between items-center p-4">
-                                <h3 className="text-white text-xl px-4">Write Reply</h3>
-                                <button
-                                    onClick={() => setIsReplyOpen(false)}
-                                    className="text-[#4EEAFF]/70 hover:text-[#4EEAFF] text-xl w-8 h-8"
-                                >
-                                    ×
-                                </button>
-                            </div>
-                            
-                            {/* Reply Input */}
-                            <div className="flex-1 px-8 pb-8">
-                                <textarea
-                                    value={replyText}
-                                    onChange={(e) => setReplyText(e.target.value)}
-                                    onKeyDown={handleReplyText}
-                                    placeholder="Write your reply here..."
-                                    className="w-full h-[120px] bg-[#2A4C54]/40  
-                                            border border-[#4EEAFF]/30 
-                                            rounded-[12px] p-4 
-                                            text-[#4EEAFF] placeholder:text-[#4EEAFF]/50
-                                            focus:outline-none focus:border-[#4EEAFF]/50 
-                                            resize-none"
-                                />
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '0px',  // Move down to overlap with content window bottom
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: '780px',
+                        height: '300px',  // Increased height for better symmetry
+                        backgroundColor: 'rgba(26, 26, 63, 0.9)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '36px',
+                        padding: '48px 24px 24px',  // Increased top padding to center textarea
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '24px',
+                        backdropFilter: 'blur(50px)',  // Maximum blur
+                        WebkitBackdropFilter: 'blur(50px)'  // Safari support
+                    }}>
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setIsReplyOpen(false)}
+                            style={{
+                                position: 'absolute',
+                                top: '8px',
+                                right: '8px',
+                                width: '42px',
+                                height: '42px',
+                                background: '#1A1A3F',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '100px',
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                fontSize: '24px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            ×
+                        </button>
 
-                                {/* Action Buttons */}
-                                <div className="flex justify-end gap-4 mt-4">
-                                    <button
-                                        onClick={() => setIsReplyOpen(false)}
-                                        className="px-8 py-2 bg-[#2A4C54]/20 
-                                                border border-[#4EEAFF]/30 rounded-xl
-                                                text-[#4EEAFF] hover:bg-[#2A4C54]/40 
-                                                transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleSendReply}
-                                        disabled={!replyText.trim()}
-                                        className="px-8 py-2 bg-[#83CEDD] rounded-xl
-                                                text-white hover:bg-[#94DFF0] 
-                                                transition-colors
-                                                disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Send Reply
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        {/* Reply Input */}
+                        <textarea
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            style={{
+                                flex: 1,
+                                background: 'rgba(255, 255, 255, 0.1)',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '24px',
+                                padding: '16px',
+                                color: '#FFFFFF',
+                                fontFamily: 'Montserrat',
+                                fontSize: '16px',
+                                resize: 'none',
+                                outline: 'none'  // Prevent default focus border
+                            }}
+                            placeholder="Write your reply..."
+                        />
+
+                        {/* Send Button */}
+                        <button
+                            onClick={handleSendReply}
+                            style={{
+                                width: '180px',
+                                height: '72px',
+                                background: 'linear-gradient(93.06deg, #FF39E0 0%, #AE4FFF 51.56%, #30B3D4 100%)',
+                                border: 'none',
+                                borderRadius: '24px',
+                                color: '#FFFFFF',
+                                fontFamily: 'Montserrat',
+                                fontSize: '20px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                alignSelf: 'flex-end'
+                            }}
+                        >
+                            Send Reply
+                        </button>
                     </div>
                 )}
             </div>

@@ -39,6 +39,43 @@ export class SceneManager {
         });
     }
 
+    
+
+    private setupUIEventListeners() {
+        // UI Close events - enable keyboard
+        EventBus.on("close-write", () => {
+            this.enableGameInput();
+        });
+
+        EventBus.on("close-content", () => {
+            this.enableGameInput();
+        });
+
+        EventBus.on("close-chat", () => {
+            this.enableGameInput();
+        });
+    }
+
+    public disableGameInput() {
+        if (this.scene.input.keyboard) {
+            this.scene.input.keyboard.enabled = false;
+            this.scene.input.keyboard.clearCaptures();
+        }
+    }
+
+    public enableGameInput() {
+        if (this.scene.input.keyboard) {
+            this.scene.input.keyboard.enabled = true;
+        }
+    }
+
+    public destroy() {
+        // Clean up event listeners
+        EventBus.removeListener("close-write");
+        EventBus.removeListener("close-content");
+        EventBus.removeListener("close-chat");
+    }
+
     // UI 相关方法
     private createUI() {
         this.createTopBar();
@@ -121,43 +158,65 @@ export class SceneManager {
 
     private createSidebar() {
         const menuItems = [
-            { text: "CONTENT", y: 200, key: "button_content" },
-            { text: "WRITE", y: 260, key: "button_write" },
-            { text: "CHAT", y: 320, key: "button_chat" },
+            { text: 'CONTENT', y: 480, key: 'button_content', hoverKey: 'content-hover' },
+            { text: 'WRITE', y: 420, key: 'button_write', hoverKey: 'write-hover' },
+            { text: 'CHAT', y: 360, key: 'button_chat', hoverKey: 'chat-hover' }
         ];
 
-        menuItems.forEach((item) => {
-            const button = this.scene.add
-                .image(78, item.y, item.key)
+        // Add menu background rectangle
+        const menuBg = this.scene.add.image(78, 420, 'menu-rectangle')
+            .setScrollFactor(0)
+            .setDepth(999);
+
+        menuItems.forEach(item => {
+            // Create button container
+            const button = this.scene.add.container(78, item.y);
+
+            // Create hover elements (initially invisible)
+            const hoverEllipse = this.scene.add.image(0, 0, 'ellipse').setVisible(false);
+            const hoverText = this.scene.add.image(80, 0, item.hoverKey).setVisible(false);
+
+            // Create the main button
+            const mainButton = this.scene.add.image(0, 0, item.key)
                 .setScrollFactor(0)
                 .setDepth(1000)
                 .setInteractive({ useHandCursor: true });
 
-            button.on("pointerdown", () => {
-                if (item.text === "CONTENT") {
-                    EventBus.emit("open-content");
-                } else if (item.text === "WRITE") {
-                    EventBus.emit("open-write");
-                } else if (item.text === "CHAT") {
-                    EventBus.emit("open-chat");
-                }
-            });
-
             // Add hover effects
-            button.on("pointerover", () => {
+            mainButton.on('pointerover', () => {
                 this.scene.input.manager.canvas.style.cursor = "pointer";
-                if (item.text !== "WRITE") {
-                    // Don't affect selected button
-                    button.setAlpha(0.8);
+                hoverEllipse.setVisible(true);
+                hoverText.setVisible(true);
+                if (item.text !== 'WRITE') {
+                    mainButton.setAlpha(0.8);
                 }
             });
 
-            button.on("pointerout", () => {
+            mainButton.on('pointerout', () => {
                 this.scene.input.manager.canvas.style.cursor = "default";
-                if (item.text !== "WRITE") {
-                    button.setAlpha(1);
+                hoverEllipse.setVisible(false);
+                hoverText.setVisible(false);
+                if (item.text !== 'WRITE') {
+                    mainButton.setAlpha(1);
                 }
             });
+
+            mainButton.on('pointerdown', () => {
+                if (item.text === 'CONTENT') {
+                    EventBus.emit('open-content');
+                    this.disableGameInput();
+                } else if (item.text === 'WRITE') {
+                    EventBus.emit('open-write');
+                    this.disableGameInput();
+                } else if (item.text === 'CHAT') {
+                    EventBus.emit('open-chat');
+                    this.disableGameInput();
+                }
+            });
+
+            // Add all elements to the container
+            button.add([hoverEllipse, mainButton, hoverText]);
+            this.sidebarButtons.push(button);
         });
     }
 

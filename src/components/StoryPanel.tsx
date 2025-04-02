@@ -3,13 +3,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRef } from 'react';
 import { Story } from "@/components/StoryList";
 interface StoryPanelProps {
-  selectedStory: Story | null;
-  sendCoin: () => Promise<void>;
-  balance: number;
-  isMyStories: boolean;
-  recipient: string;
-  approveAmount: number;
-  setApproveAmount: (amount: number) => void;
+    selectedStory: Story | null;
+    isMyStories: boolean;
+    recipient: string;
+    approveAmount: number;
+    setApproveAmount: (amount: number) => void;
 }
 
 export function StoryPanel(props: StoryPanelProps) {

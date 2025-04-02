@@ -3,108 +3,79 @@ import Phaser from "phaser";
 import Player from "../../heroes/player";
 import Barman from "../../heroes/barman";
 import Dialog from "../../menu/dialog";
-import { ChatWindow } from "../../menu/chatWindow";
 import AIChatClient from "../../utils/AIChatClient";
 import { EventBus } from "../../EventBus";
+import { SceneManager } from "./sceneManager";
 
 export class BarmanInteraction {
     private scene: Phaser.Scene;
     private player: Player;
     private barman: Barman;
     private gridSize: number;
-    private dialog: Dialog;
-    private chatWindow: ChatWindow;
+    private dialog?: Dialog;
     private isDialogVisible = false;
+    private sceneManager: SceneManager;
 
     constructor(
         scene: Phaser.Scene,
         player: Player,
         barman: Barman,
-        gridSize: number
+        gridSize: number,
+        sceneManager: SceneManager
     ) {
         this.scene = scene;
         this.player = player;
         this.barman = barman;
         this.gridSize = gridSize;
-        this.chatWindow = new ChatWindow((message) =>
-            this.handleBarmanResponse(message)
-        );
-
-        // Add streaming response handler
-        EventBus.on(
-            "chat-stream",
-            (data: { chunk: string; isComplete: boolean }) => {
-                console.log("📨 Received stream chunk:", data);
-                this.chatWindow.appendStreamingMessage(
-                    data.chunk,
-                    data.isComplete
-                );
-            }
-        );
+        this.sceneManager = sceneManager;
     }
 
     public handleBarmanInteraction() {
-        const distance = Phaser.Math.Distance.Between(
-            this.player.sprite.x,
-            this.player.sprite.y,
-            this.barman.sprite.x,
-            this.barman.sprite.y
-        );
-        const maxDistance = this.gridSize * 5;
-        if (this.isDialogVisible) return;
-        this.isDialogVisible = true;
-
         this.dialog = new Dialog(this.scene);
-        const dialogs = [
-            {
-                text: "Welcome to Web3 Tavern! I'm the bartender here, how can I help you today?",
-            },
-            {
-                text: "It's the best bar!",
-                options: [
-                    { text: "Chat", callback: () => this.startChat() },
-                    { text: "Leave", callback: () => this.endDialog() },
-                ],
-            },
-        ];
-        this.dialog.showDialogs(dialogs);
-        return true;
-    }
+        if (!this.dialog) return;
+        
+        // Disable keyboard when dialog opens
+        this.sceneManager.disableGameInput();
+        
+        // Show initial greeting
+        this.dialog.showResponse("Welcome to Web3 Tavern! I'm the bartender here, how can I help you today?");
+        this.dialog.show();
 
-    private startChat() {
-        this.endDialog();
-        this.chatWindow.show();
-        // Initial greeting message in English
-        this.chatWindow.addMessage(
-            "Welcome to Beforelife bar! I'm the bartender here, how can I help you today?",
-            "barman"
-        );
-    }
+        // Listen for messages
+        EventBus.on('barman-message', async (message: string) => {
+            if (!this.dialog) return;
+            
+            // Show loading state
+            this.dialog.showResponse("...");
 
-    private async handleBarmanResponse(userMessage: string) {
-        console.log("💬 User message:", userMessage);
-        // Show user message immediately without animation
-        this.chatWindow.addMessage(userMessage, "user");
+            try {
+                // Send message and let streaming handler update the dialog
+                await AIChatClient.sendMessage(message);
+            } catch (error) {
+                console.error('Failed to get AI response:', error);
+                this.dialog.showResponse('Sorry, I had trouble understanding that. Could you try again?');
+            }
+        });
 
-        // Show loading message immediately after user message
-        this.chatWindow.appendStreamingMessage("", false); // This will show the loading indicator
-
-        // Use AIChatClient for AI response
-        AIChatClient.sendMessage(userMessage).catch((error) => {
-            console.error("Failed to get AI response:", error);
-            // Optionally handle error in UI
+        // Handle streaming responses
+        EventBus.on('chat-stream', ({ chunk, isComplete }: { chunk: string; isComplete: boolean }) => {
+            if (!this.dialog) return;
+            this.dialog.showResponse(chunk);
         });
     }
 
     private endDialog() {
-        this.isDialogVisible = false;
-        if (this.dialog && "destroy" in this.dialog) {
+        if (this.dialog) {
+            // Enable keyboard when dialog closes
+            this.sceneManager.enableGameInput();
+            
+            EventBus.removeListener('barman-message');
             this.dialog.destroy();
+            this.dialog = undefined;
         }
     }
 
     public destroy() {
-        this.chatWindow.destroy();
         this.dialog?.destroy();
         // Remove event listener
         EventBus.removeListener("chat-stream");

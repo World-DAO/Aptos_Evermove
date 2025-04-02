@@ -20,7 +20,6 @@ interface WriteStoryProps {
               value={props.newStoryTitle}
               onChange={(e) => props.setNewStoryTitle(e.target.value)}
               placeholder="Write your title here..."
-              onKeyDown={props.handleKeyDown}
               className="w-full bg-[#2A2A2F] border-2 border-[#4A4A4F] p-3 
                        text-[#4EEAFF] placeholder:text-[#4EEAFF]/50 
                        focus:outline-none focus:border-[#4EEAFF]/50"
@@ -28,7 +27,6 @@ interface WriteStoryProps {
             <textarea
               value={props.newStoryContent}
               onChange={(e) => props.setNewStoryContent(e.target.value)}
-              onKeyDown={props.handleKeyDown}
               placeholder="Write your story here..."
               className="w-full bg-[#2A2A2F] border-2 border-[#4A4A4F] p-3 h-[50vh] 
                        text-[#4EEAFF] placeholder:text-[#4EEAFF]/50 

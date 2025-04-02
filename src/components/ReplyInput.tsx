@@ -9,19 +9,6 @@ interface ReplyInputProps {
 export function ReplyInput({ onSendReply, placeholder, className }: ReplyInputProps) {
   const [replyText, setReplyText] = useState("");
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === " " || e.code === "Space") {
-      e.preventDefault();
-      const target = e.target as HTMLTextAreaElement;
-      const start = target.selectionStart ?? 0;
-      const end = target.selectionEnd ?? 0;
-      setReplyText(replyText.substring(0, start) + ' ' + replyText.substring(end));
-      setTimeout(() => {
-        target.selectionStart = target.selectionEnd = start + 1;
-      }, 0);
-    }
-  };
-
   const handleSubmit = () => {
     if (!replyText.trim()) return;
     onSendReply(replyText);
@@ -33,7 +20,6 @@ export function ReplyInput({ onSendReply, placeholder, className }: ReplyInputPr
       <textarea 
         value={replyText}
         onChange={(e) => setReplyText(e.target.value)}
-        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className="w-full bg-[#2A2A2F] border-2 border-[#4A4A4F] p-3
                 text-[#4EEAFF] placeholder:text-[#4EEAFF]/50 

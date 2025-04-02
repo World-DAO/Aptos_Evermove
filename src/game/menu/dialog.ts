@@ -1,341 +1,217 @@
 // src/Dialog.ts
 import Phaser from "phaser";
+import { EventBus } from "../EventBus";
 
-enum DialogState {
+export enum DialogState {
     HIDDEN = "HIDDEN",
     TYPING = "TYPING",
     SHOWING = "SHOWING",
     SHOWING_OPTIONS = "SHOWING_OPTIONS",
 }
 
-interface DialogOption {
+export interface DialogOption {
     text: string;
     callback: () => void;
 }
 
 export default class Dialog {
     private scene: Phaser.Scene;
-    private dialogBox: Phaser.GameObjects.Rectangle;
-    private dialogText: Phaser.GameObjects.Text;
-    private currentOptions?: DialogOption[];
+    private dialogBox: Phaser.GameObjects.Image;  // Change to Image
+    private profilePic: Phaser.GameObjects.Image;  // Add this property
+    private responseText: Phaser.GameObjects.Text;
+    private inputContainer: HTMLDivElement;
+    private inputField: HTMLInputElement;
+    private closeButton: Phaser.GameObjects.Image; 
+    private currentResponse: string = "";  // Keep this for accumulating chunks
 
-    // 用枚举管理所有状态
     public state: DialogState = DialogState.HIDDEN;
 
-    private fullText: string = "";
-    private currentIndex: number = 0;
-    private typingTimer?: Phaser.Time.TimerEvent;
-
-    private queue: Array<{ text: string; options?: DialogOption[] }> = [];
-    private onCompleteCallback?: () => void;
-
-    private optionsContainer?: Phaser.GameObjects.Container;
-    private modalOverlay?: Phaser.GameObjects.Rectangle;
-
-    constructor(scene: Phaser.Scene, height: number = 100) {
+    constructor(scene: Phaser.Scene) {
         this.scene = scene;
-        const bgWidth = this.scene.data.get("bgWidth");
-        const bgHeight = this.scene.data.get("bgHeight");
+        this.createDialogBoxes();
+    }
 
-        this.dialogBox = this.scene.add
-            .rectangle(
-                Math.max(this.scene.cameras.main.width, bgWidth) / 2,
-                this.scene.cameras.main.height * 0.8,
-                Math.max(this.scene.cameras.main.width, bgWidth),
-                this.scene.cameras.main.height * 0.2,
-                0x1a1a2e,
-                0.9
-            )
-            .setScrollFactor(0)
-            .setVisible(false)
-            .setDepth(10)
-            .setInteractive()
-            .setStrokeStyle(3, 0x4eeaff, 1);
+    private createDialogBoxes() {
+        const bgWidth = this.scene.cameras.main.width;
+        const bgHeight = this.scene.cameras.main.height;
 
-        this.dialogText = this.scene.add
-            .text(this.dialogBox.x, this.dialogBox.y, "", {
-                fontSize: "18px",
-                color: "#4EEAFF",
-                fontFamily: "PixelFont",
-                shadow: {
-                    offsetX: 2,
-                    offsetY: 2,
-                    color: "#000000",
-                    blur: 4,
-                    fill: true,
-                },
-                wordWrap: { width: bgWidth - 50 },
+        // Dialog box background
+        this.dialogBox = this.scene.add.image(
+            bgWidth / 2,
+            bgHeight - 200,
+            'dialog-box'
+        )
+        .setDisplaySize(1300, 148)
+        .setScrollFactor(0)
+        .setDepth(10);
+
+        // Add close button at top right of dialog box
+        const closeButton = this.scene.add.image(
+            bgWidth / 2 + 620,  // Right edge of dialog + some padding
+            bgHeight - 250,     // Top of dialog - some padding
+            'close-button'
+        )
+        .setDisplaySize(24, 24)
+        .setScrollFactor(0)
+        .setDepth(11)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => this.hide());
+
+        // Store reference for show/hide/destroy
+        this.closeButton = closeButton;
+
+        // Store profile pic reference
+        this.profilePic = this.scene.add.image(
+            bgWidth / 2 - 600,
+            bgHeight - 200,
+            'profile-pic'
+        )
+        .setDisplaySize(48, 48)
+        .setScrollFactor(0)
+        .setDepth(11);
+
+        // Adjust text position to be next to profile
+        this.responseText = this.scene.add
+            .text(bgWidth / 2 - 540, bgHeight - 200, "", {
+                fontSize: "20px",
+                color: "#FFFFFF",
+                fontFamily: "Montserrat",
+                fontStyle: "500",
+                align: "left",
+                lineSpacing: 14,
+                wordWrap: { width: 1100 }
             })
-            .setOrigin(0.5)
+            .setOrigin(0, 0.5)
             .setScrollFactor(0)
-            .setVisible(false)
             .setDepth(11);
 
-        // 点击对话框时的处理
-        this.dialogBox.on("pointerup", () => {
-            switch (this.state) {
-                case DialogState.TYPING:
-                    // 如果正在打字，加速到完整文本
-                    this.finishTyping(this.currentOptions);
-                    break;
-                case DialogState.SHOWING:
-                    // 如果打字结束、且没有选项，就直接关闭对话走下一个
-                    this.hide();
-                    break;
-                case DialogState.SHOWING_OPTIONS:
-                    // 如果正在显示选项，通常不做关闭（或你可以决定怎样处理）
-                    break;
+        this.inputContainer = document.createElement('div');
+        Object.assign(this.inputContainer.style, {
+            position: 'fixed',
+            left: '50%',
+            bottom: '40px',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            width: '1300px',
+            height: '74px',
+            padding: '0',
+            zIndex: '12',
+        });
+
+        // Create and style the input field
+        this.inputField = document.createElement('input');
+        Object.assign(this.inputField.style, {
+            width: '100%',
+            height: '74px',
+            padding: '0 70px',
+            backgroundColor: '#1A1A1A',
+            color: '#FFFFFF',
+            border: '1px solid #383838',
+            borderRadius: '20px',    // Updated to 32px
+            outline: 'none',
+            fontFamily: 'Montserrat',
+            fontWeight: '500',
+            fontSize: '20px',
+            lineHeight: '74px',
+            caretColor: '#FFFFFF'
+        });
+
+        this.inputField.placeholder = 'Type your message...';
+
+        // Style the placeholder
+        const style = document.createElement('style');
+        style.textContent = `
+            input::placeholder {
+                color: rgba(255, 255, 255, 0.5);
+                font-family: Montserrat;
+                font-weight: 500;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Create enter icon
+        const enterIcon = document.createElement('div');
+        Object.assign(enterIcon.style, {
+            position: 'absolute',
+            right: '24px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '24px',     // Changed from 32px to 24px
+            height: '24px',    // Changed from 32px to 24px
+            backgroundImage: 'url("img/EnterIcon.png")',
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            zIndex: '13'
+        });
+
+        // Add elements to container
+        this.inputContainer.appendChild(this.inputField);
+        this.inputContainer.appendChild(enterIcon);
+        document.body.appendChild(this.inputContainer);
+
+        // Add enter key handler
+        this.inputField.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && this.inputField.value.trim()) {
+                this.handleSubmit(this.inputField.value);
+                this.inputField.value = '';
             }
         });
     }
 
-    /**
-     * 显示一系列对话
-     */
-    public showDialogs(
-        dialogs: Array<{ text: string; options?: DialogOption[] }>,
-        onComplete?: () => void
-    ) {
-        this.queue.push(...dialogs);
-        if (this.state === DialogState.HIDDEN) {
-            this.onCompleteCallback = onComplete;
-            this.showNextDialog();
-        }
+    private handleSubmit(message: string) {
+        // Emit event for AI response
+        EventBus.emit('barman-message', message);
     }
 
-    private showNextDialog() {
-        if (this.queue.length === 0) {
-            if (this.onCompleteCallback) {
-                this.onCompleteCallback();
-                this.onCompleteCallback = undefined;
-            }
-            // 无对话，隐藏
-            this.state = DialogState.HIDDEN;
+    public showResponse(text: string) {
+        if (text === "...") {
+            // Reset for new conversation
+            this.currentResponse = "";
+            this.responseText.setText(text);
+        } else if (text === "") {
+            // Skip empty chunks
             return;
+        } else {
+            // Accumulate chunks
+            this.currentResponse += text;
+            this.responseText.setText(this.currentResponse);
         }
+    }
 
-        const { text, options } = this.queue.shift()!;
-        this.currentOptions = options;
-        this.fullText = text;
-        this.currentIndex = 0;
-        this.dialogText.setText("");
+    public clearResponse() {
+        this.currentResponse = "";
+        this.responseText.setText("");
+    }
 
+    public show() {
         this.dialogBox.setVisible(true);
-        this.dialogText.setVisible(true);
-
-        // 进入 TYPING 状态
-        this.state = DialogState.TYPING;
-        // 开始类型写入效果
-        this.typingTimer = this.scene.time.addEvent({
-            delay: 50,
-            callback: () => this.typeNextCharacter(options),
-            loop: true,
-        });
+        this.profilePic.setVisible(true);
+        this.responseText.setVisible(true);
+        this.closeButton.setVisible(true);  // Show close button
+        this.inputContainer.style.display = 'flex';
+        this.inputField.focus();
     }
 
-    private typeNextCharacter(options?: DialogOption[]) {
-        if (this.currentIndex < this.fullText.length) {
-            this.dialogText.setText(
-                this.dialogText.text + this.fullText[this.currentIndex]
-            );
-            this.currentIndex++;
-        } else {
-            // 打字完成
-            this.finishTyping();
-
-            // 若有选项，进入 SHOWING_OPTIONS 状态
-            if (options && options.length > 0) {
-                this.state = DialogState.SHOWING_OPTIONS;
-                this.showOptions(options);
-            } else {
-                // 否则进入 SHOWING 状态
-                this.state = DialogState.SHOWING;
-            }
-        }
-    }
-
-    private finishTyping(options?: DialogOption[]) {
-        if (this.typingTimer) {
-            this.typingTimer.remove(false);
-            this.typingTimer = undefined;
-        }
-        // 直接显示完整文本
-        this.dialogText.setText(this.fullText);
-        this.currentIndex = this.fullText.length;
-
-        // ========== 新增的逻辑 ==========
-        // 若本对话实际上有选项，并且当前还没进入SHOWING_OPTIONS，就进入
-        if (options && options.length > 0) {
-            this.state = DialogState.SHOWING_OPTIONS;
-            this.showOptions(options);
-        } else {
-            // 否则就是普通 SHOWING
-            this.state = DialogState.SHOWING;
-        }
-    }
-
-    /**
-     * 隐藏对话框并显示下一个对话
-     */
-    private hide() {
+    public hide() {
         this.dialogBox.setVisible(false);
-        this.dialogText.setVisible(false);
-
-        // 如果有选项，清理
-        this.closeOptions();
-
-        this.state = DialogState.HIDDEN;
-        // 显示队列中的下一个对话
-        this.showNextDialog();
-    }
-
-    /**
-     * 显示选项
-     */
-    private showOptions(options: DialogOption[]) {
-        const bgWidth = this.scene.data.get("bgWidth");
-        const bgHeight = this.scene.data.get("bgHeight");
-
-        // 创建遮罩
-        this.modalOverlay = this.scene.add
-            .rectangle(
-                bgWidth / 2,
-                bgHeight / 2,
-                bgWidth,
-                bgHeight,
-                0x000000,
-                0.5
-            )
-            .setDepth(20)
-            .setInteractive();
-
-        // 创建选项容器
-        this.optionsContainer = this.scene.add
-            .container(
-                this.scene.cameras.main.width / 2,
-                this.scene.cameras.main.height / 2
-            )
-            .setDepth(21)
-            .setScrollFactor(0);
-
-        const buttonWidth = 200;
-        const buttonHeight = 50;
-        const buttonSpacing = 20;
-        const totalHeight =
-            options.length * (buttonHeight + buttonSpacing) - buttonSpacing;
-        const startY = -totalHeight / 2;
-
-        options.forEach((option, index) => {
-            const yPos = startY + index * (buttonHeight + buttonSpacing);
-
-            const buttonBG = this.scene.add
-                .rectangle(0, yPos, buttonWidth, buttonHeight, 0x2a4c54)
-                .setInteractive({ useHandCursor: true })
-                .setScrollFactor(0)
-                .on("pointerover", () => {
-                    const buttonText = this.scene.add
-                        .text(0, yPos, option.text, {
-                            fontSize: "16px",
-                            color: "#4EEAFF",
-                            fontFamily: "PixelFont",
-                        })
-                        .setOrigin(0.5);
-                    buttonBG.setFillStyle(0x4eeaff);
-                    buttonText.setColor("#000000");
-                })
-                .on("pointerout", () => {
-                    const buttonText = this.scene.add
-                        .text(0, yPos, option.text, {
-                            fontSize: "16px",
-                            color: "#4EEAFF",
-                            fontFamily: "PixelFont",
-                        })
-                        .setOrigin(0.5);
-                    buttonBG.setFillStyle(0x2a4c54);
-                    buttonText.setColor("#4EEAFF");
-                })
-                .on("pointerdown", () => {
-                    // 点击效果
-                    buttonBG.setFillStyle(0x9d5bde);
-                    setTimeout(() => {
-                        option.callback();
-                        this.closeOptions();
-                        this.hide();
-                    }, 100);
-                });
-
-            const buttonText = this.scene.add
-                .text(0, yPos, option.text, {
-                    fontSize: "16px",
-                    color: "#4EEAFF",
-                    fontFamily: "PixelFont",
-                })
-                .setOrigin(0.5);
-
-            this.optionsContainer!.add([buttonBG, buttonText]);
-        });
-
-        // 阻止点击透传
-        this.modalOverlay.on("pointerdown", () => {
-            // 空操作：不关闭选项
-        });
-    }
-
-    private closeOptions() {
-        if (this.optionsContainer) {
-            this.optionsContainer.destroy();
-            this.optionsContainer = undefined;
-        }
-        if (this.modalOverlay) {
-            this.modalOverlay.destroy();
-            this.modalOverlay = undefined;
-        }
-    }
-    /**
-     * 判断点击是否落在对话区域
-     */
-    public isContained(x: number, y: number): boolean {
-        console.log(this.state);
-        // 如果正在显示对话或选项，都算"占据屏幕"
-        if (this.state === DialogState.HIDDEN) {
-            return false;
-        }
-        if (this.state === DialogState.SHOWING_OPTIONS) {
-            return true;
-        } else {
-            return this.dialogBox.getBounds().contains(x, y);
-        }
+        this.profilePic.setVisible(false);
+        this.responseText.setVisible(false);
+        this.closeButton.setVisible(false);  // Hide close button
+        this.inputContainer.style.display = 'none';
+        this.clearResponse();
     }
 
     public destroy() {
-        // Remove any DOM elements or event listeners
-        this.optionsContainer?.destroy();
-        this.optionsContainer = undefined;
-        this.modalOverlay?.destroy();
-        this.modalOverlay = undefined;
+        this.dialogBox.destroy();
+        this.profilePic.destroy();
+        this.responseText.destroy();
+        this.closeButton.destroy();  // Destroy close button
+        this.inputContainer.remove();
     }
 
-    private createElements() {
-        Object.assign(this.dialogBox, {
-            fillColor: 0x1a1a2e,
-            fillAlpha: 0.9,
-            strokeColor: 0x4eeaff,
-            strokeAlpha: 1,
-            strokeThickness: 3,
-            isStroked: true,
-        });
-
-        Object.assign(this.dialogText.style, {
-            fontSize: "18px",
-            color: "#4EEAFF",
-            fontFamily: "PixelFont",
-            shadow: {
-                offsetX: 2,
-                offsetY: 2,
-                color: "#000000",
-                blur: 4,
-                fill: true,
-            },
-        });
+    public isContained(x: number, y: number): boolean {
+        return this.responseText.getBounds().contains(x, y);
     }
 }

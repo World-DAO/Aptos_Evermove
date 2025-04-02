@@ -36,21 +36,6 @@ export function StoryView({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // console.log("Pressed key:", e.key, "code:", e.code);
-    if (e.key === " " || e.code === "Space") {
-      e.preventDefault();
-      const target = e.target as HTMLTextAreaElement;
-      const start = target.selectionStart ?? 0;
-      const end = target.selectionEnd ?? 0;
-      setReplyText(replyText.substring(0, start) + ' ' + replyText.substring(end));
-      setTimeout(() => {
-        target.selectionStart = target.selectionEnd = start + 1;
-      }, 0);
-    //   console.log('space')
-    }
-  };
-
   return (
     <div className="flex-1 flex flex-col relative">
       <ScrollArea className="flex-1 mb-[200px]">

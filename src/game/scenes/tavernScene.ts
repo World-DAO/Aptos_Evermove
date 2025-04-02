@@ -20,12 +20,14 @@ export default class TavernScene extends Phaser.Scene {
         // 设置场景尺寸数据
         // this.data.set('bgWidth', 550);
         // this.data.set('bgHeight', 1195);
-        const { width, height } = calculateGameSize(
-            Math.max(window.innerWidth, 1600),
-            Math.max(window.innerHeight, 900)
-        );
-        this.data.set("bgWidth", width);
-        this.data.set("bgHeight", height);
+        // const { width, height } = calculateGameSize(
+        //     Math.max(window.innerWidth, 1600),
+        //     Math.max(window.innerHeight, 900)
+        // );
+        // this.data.set("bgWidth", width);
+        // this.data.set("bgHeight", height);
+        this.data.set("bgWidth", Math.max(window.innerWidth, 1600));
+        this.data.set("bgHeight", Math.max(window.innerHeight, 900));
 
         // 初始化场景管理器
         this.sceneManager = new SceneManager(this);
@@ -47,38 +49,26 @@ export default class TavernScene extends Phaser.Scene {
             this,
             this.sceneManager.player,
             this.sceneManager.barman,
-            this.sceneManager.gridSize
+            this.sceneManager.gridSize,
+            this.sceneManager
         );
-
         // 设置UI和事件监听
-        //this.setupUIAndEvents();
+        this.setupUIAndEvents();
     }
 
     private setupUIAndEvents() {
-        this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-            if (
-                this.barmanInteraction?.isContained(pointer.x, pointer.y) ||
-                this.barmanInteraction?.isContainedBarman(
-                    pointer.worldX,
-                    pointer.worldY
-                )
-            ) {
-                // 如果点击了酒保或对话框，不处理移动
-                return;
-            }
-
-            if (this.sceneManager.isContained(pointer.worldX, pointer.worldY)) {
-                return;
-            }
-            this.sceneManager.handlePointerDown(
-                pointer,
-                this.movementController
-            );
-        });
-
         // Barman交互
         this.sceneManager.barman.sprite.on("pointerdown", () => {
             this.barmanInteraction?.handleBarmanInteraction();
+        });
+
+        this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+            // Don't handle movement if UI is active
+            if (this.input.keyboard?.enabled === false) {
+                return;
+            }
+
+            // Rest of the pointer handling code...
         });
     }
 
