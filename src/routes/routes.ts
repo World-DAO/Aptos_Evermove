@@ -110,6 +110,16 @@ router.post("/stories", authenticate, async (req: Request, res: Response) => {
     }
 });
 
+router.post("/stories/sync", async (req: Request, res: Response) => {
+    const { wallet, title, content } = req.body;
+    try {
+        const story = await StoryService.publishUserStory(wallet, title, content);
+        res.json({ success: true, story });
+    } catch (error: any) {
+        res.status(500).json({ success: false, reason: error.message });
+    }
+});
+
 /**
  * DELETE /stories/:storyId
  * 删除故事。需要认证。
