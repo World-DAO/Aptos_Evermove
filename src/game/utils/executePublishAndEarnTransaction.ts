@@ -3,9 +3,9 @@ import { Aptos, Network } from "@aptos-labs/ts-sdk";
 // 等合约完成了需要修改这里
 
 // 合约参数
-const CONTRACT_ADDRESS = "0xYourContractAddress";
-const MODULE_NAME = "publishModule";
-const FUNCTION_NAME = "publishAndEarn";
+const CONTRACT_ADDRESS = "0x339d344092acf1fb4872b0a6bedc5a558ba170931905a2265da10eeb9c203795";
+const MODULE_NAME = "send";
+const FUNCTION_NAME = "add";
 
 // 调用合约的参数
 interface PublishParams {
@@ -33,7 +33,7 @@ export async function executePublishAndEarnTransaction(
         function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::${FUNCTION_NAME}`,
         typeArguments: [],
         // 将合约函数参数放到 functionArguments 中，这里以故事标题和内容为例
-        functionArguments: [params.title, params.content],
+        //functionArguments: [params.title, params.content],
       },
     };
 

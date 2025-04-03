@@ -21,26 +21,60 @@ export class loginScene extends Scene {
     preload() {
         // Load background image
         this.load.image("cover", "img/cover_new.png");
-        this.load.image("logo", "favicon.png");
+        this.load.image("logo", "favicon_w.png");
     }
 
     create() {
         const { width, height } = this.scale;
 
-        // const topOverlay = this.add.rectangle(
-        //     0, 0,
-        //     width, height / 6,
-        //     0x000000,
-        //     0.7
-        // )
-        //     .setOrigin(0, 0)
-        //     .setDepth(5);
+        // 替换原来的 topOverlay
+        const fogOverlay = this.add.graphics();
 
-        // // 调整Logo位置（确保在蒙版区域内）
-        // const logo = this.add.image(20, 20, "logo")  // 保留10px边距
-        //     .setOrigin(0, 0)
-        //     .setScale(0.2)
-        //     .setDepth(10);
+        // 创建从上到下的渐变遮罩
+        fogOverlay.fillGradientStyle(
+            0x000000, 0x000000, 0x000000, 0x000000,  // colors
+            0.9, 0.9, 0, 0                           // alphas
+        );
+        fogOverlay.fillRect(0, 0, width, height / 5);
+        fogOverlay.setDepth(5);
+
+        // 添加雾气动画效果
+        this.tweens.add({
+            targets: fogOverlay,
+            alpha: { from: 0.8, to: 1 },
+            duration: 2000,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+
+        // 创建一个容器来包含 logo 和文字，以便更好地控制对齐
+        const headerContainer = this.add.container(20, 20);
+        headerContainer.setDepth(10);
+
+        // 添加 logo
+        const logo = this.add.image(0, 0, "logo")
+            .setOrigin(0, 0.5)
+            .setScale(0.1);
+
+        // 添加 Mooncl 文字
+        const logoText = this.add.text(logo.width * 0.1 + 10, 2, "Mooncl", {
+            fontSize: "15px",
+            fontFamily: "Arial, sans-serif",
+            color: "#ffffff",
+            fontStyle: "bold",
+            shadow: {
+                offsetX: 2,
+                offsetY: 2,
+                color: "rgba(0, 0, 0, 0.5)",
+                blur: 3,
+                fill: true
+            }
+        })
+            .setOrigin(0, 0.5);  // 设置文字原点到左侧中间
+
+        // 将 logo 和文字添加到容器中
+        headerContainer.add([logo, logoText]);
 
         // 计算图片缩放比例（保持原始宽高比）
         const bgTexture = this.textures.get('cover');
@@ -84,7 +118,7 @@ export class loginScene extends Scene {
             container.add(prefixText);
 
             // 创建Mooncl渐变文本
-            const gradientColors = ['#8a2be2', '#5e72e4', '#4285F4'];
+            const gradientColors = ['#ff69b4', '#da70d6', '#9932cc', '#8a2be2', '#4285F4']; // 粉红 -> 兰花紫 -> 深兰花紫 -> 蓝紫 -> 蓝色
 
             // 先创建所有字符测量总宽度
             let highlightWidth = 0;
@@ -159,7 +193,6 @@ export class loginScene extends Scene {
         const button = this.add.graphics();
 
         // 创建渐变填充
-        const radius = 15; // 圆角半径
         const canvas = document.createElement('canvas');
         canvas.width = buttonWidth;
         canvas.height = buttonHeight;
@@ -169,6 +202,7 @@ export class loginScene extends Scene {
         }
 
         // 创建圆角渐变按钮
+        const radius = 30; // 圆角半径
         ctx.beginPath();
         ctx.moveTo(radius, 0);
         ctx.lineTo(buttonWidth - radius, 0);
@@ -183,8 +217,11 @@ export class loginScene extends Scene {
 
         // 创建渐变
         const grd = ctx.createLinearGradient(0, 0, buttonWidth, 0);
-        grd.addColorStop(0, '#8a2be2'); // 紫色
-        grd.addColorStop(1, '#4285F4'); // 蓝色
+        grd.addColorStop(0, '#ff69b4');    // 粉红色
+        grd.addColorStop(0.25, '#da70d6');  // 兰花紫
+        grd.addColorStop(0.5, '#9932cc');   // 深兰花紫
+        grd.addColorStop(0.75, '#8a2be2');  // 蓝紫色
+        grd.addColorStop(1, '#4285F4');     // 蓝色
         ctx.fillStyle = grd;
         ctx.fill();
 

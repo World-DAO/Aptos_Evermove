@@ -2,13 +2,23 @@ import { useEffect, useState } from "react";
 import { EventBus } from "@/game/EventBus";
 import { cn } from "@/lib/utils";
 import { useContent } from "@/hooks/useContent";
+import { executePublishAndEarnTransaction } from "@/game/utils/executePublishAndEarnTransaction";
+import { useWallet } from '@aptos-labs/wallet-adapter-react'; 
+import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 
 interface WriteWindowProps extends React.HTMLAttributes<HTMLDivElement> {}
 
+const config = new AptosConfig({ network: Network.MAINNET });
+const aptos = new Aptos(config);
+
 export function WriteWindow({ className }: WriteWindowProps) {
+    const CONTRACT_ADDRESS = "0x98a71c7bb7fe70e92185d12477a1f9553cf4f2312faa469ef98a35810c614c4a";
+    const MODULE_NAME = "send";
+    const FUNCTION_NAME = "add";
     const [isWriteOpen, setIsWriteOpen] = useState(false);
     const [writeContent, setWriteContent] = useState("");
     const { createStory, loading } = useContent();
+    const { account, signAndSubmitTransaction } = useWallet();
 
     useEffect(() => {
         const handleOpenWrite = () => {
@@ -38,7 +48,19 @@ export function WriteWindow({ className }: WriteWindowProps) {
 
     const handlePublishAndEarn = async () => {
         if (!writeContent.trim()) return;
-        
+        const response = await signAndSubmitTransaction({
+          sender: account.address,
+          data: {
+            function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::${FUNCTION_NAME}`,
+            functionArguments: [],
+          },
+        });
+        // if you want to wait for transaction
+        try {
+          await aptos.waitForTransaction({ transactionHash: response.hash });
+        } catch (error) {
+          console.error(error);
+        }
         // Generate title from first 10 characters
         const autoTitle = writeContent.trim().slice(0, 15) + "...";
         
