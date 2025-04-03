@@ -1,103 +1,32 @@
 import { useEffect, useState } from "react";
 import { EventBus } from "@/game/EventBus";
-import { cn } from "@/lib/utils";
 import { useContent } from '@/hooks/useContent';
-
-interface Story {
-    id: number;
-    author_address: string;
-    title: string;
-    story_content: string;
-    created_at: string;
-}
+import { Story } from '@/types/story';
 
 interface ContentWindowProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function ContentWindow({ className }: ContentWindowProps) {
     const [isContentOpen, setIsContentOpen] = useState(false);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [isLoading, setIsLoading] = useState(false);
+    const [currentStory, setCurrentStory] = useState<Story | null>(null);
     const [isReplyOpen, setIsReplyOpen] = useState(false);
     const [replyText, setReplyText] = useState('');
-    const { 
-        loading, 
-        stories,
-        likedStories,
-        fetchStories,
-        sendWhiskey,
-        sendReply 
-    } = useContent();
-
-    // Fetch stories when component mounts
-    useEffect(() => {
-        if (isContentOpen) {
-            fetchStories();
-        }
-    }, [isContentOpen]);
+    const { likedStories, sendWhiskey, sendReply } = useContent();
 
     useEffect(() => {
-        const handleOpenContent = () => {
-            console.log("Opening content window");
+        const handleOpenContentWithStory = (story: Story) => {
+            console.log("Opening content window with story:", story);
             setIsContentOpen(true);
+            setCurrentStory(story);
         };
 
-        EventBus.on("open-content", handleOpenContent);
+        EventBus.on("open-content-with-story", handleOpenContentWithStory);
         
         return () => {
-            EventBus.removeListener("open-content");
+            EventBus.removeListener("open-content-with-story");
         };
     }, []);
 
-    // Show loading state
-    if (isContentOpen && isLoading) {
-        return (
-            <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                backdropFilter: 'blur(50px)',
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                zIndex: 999
-            }}>
-                <div className="text-white">Loading stories...</div>
-            </div>
-        );
-    }
-
-    // Don't return null if we're loading
-    if (!isContentOpen) return null;
-
-    // Show error state if no stories
-    if (!isLoading && stories.length === 0) {
-        return (
-            <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                backdropFilter: 'blur(50px)',
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                zIndex: 999
-            }}>
-                <div className="text-white">No stories available</div>
-            </div>
-        );
-    }
-
-    const currentStory = stories[currentIndex];
-
-    const handleNext = () => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % stories.length);
-    };
+    if (!isContentOpen || !currentStory) return null;
 
     const handleLike = async () => {
         if (!currentStory) return;
@@ -166,7 +95,7 @@ export function ContentWindow({ className }: ContentWindowProps) {
                         marginBottom: '24px',
                         paddingLeft: '10px'
                     }}>
-                        From: {currentStory.author_address}
+                        From: {currentStory?.author_address}
                     </div>
                     <div style={{
                         fontFamily: 'Montserrat',
@@ -187,9 +116,9 @@ export function ContentWindow({ className }: ContentWindowProps) {
                     position: 'relative',
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     gap: '16px',
                     marginTop: 'auto',  // Push to bottom
-                    paddingLeft: '24px',  // Match content padding
                     paddingBottom: '24px'
                 }}>
                     <button
@@ -231,9 +160,7 @@ export function ContentWindow({ className }: ContentWindowProps) {
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '8px',
-                            cursor: 'pointer',
-                            position: 'relative',
-     
+                            cursor: 'pointer'
                         }}
                     >
                         <img src="img/replyButton.png" alt="Reply" />
@@ -244,33 +171,6 @@ export function ContentWindow({ className }: ContentWindowProps) {
                             fontWeight: 700
                         }}>
                             Reply
-                        </span>
-                    </button>
-
-                    <button
-                        onClick={handleNext}
-                        style={{
-                            width: '180px',
-                            height: '72px',
-                            background: '#1A1A3F',
-                            border: '1px solid rgba(255, 255, 255, 0.4)',  // 40% opacity white border
-                            borderRadius: '24px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            cursor: 'pointer',
-                            position: 'relative',
-                        }}
-                    >
-                        <img src="img/nextButton.png" alt="Next" />
-                        <span style={{ 
-                            color: '#FFFFFF',
-                            fontFamily: 'Montserrat',
-                            fontSize: '20px',
-                            fontWeight: 700
-                        }}>
-                            Next
                         </span>
                     </button>
                 </div>
@@ -305,81 +205,72 @@ export function ContentWindow({ className }: ContentWindowProps) {
                 {isReplyOpen && (
                     <div style={{
                         position: 'absolute',
-                        bottom: '0px',  // Move down to overlap with content window bottom
+                        bottom: '48px',
                         left: '50%',
                         transform: 'translateX(-50%)',
-                        width: '780px',
-                        height: '300px',  // Increased height for better symmetry
-                        backgroundColor: 'rgba(26, 26, 63, 0.9)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '36px',
-                        padding: '48px 24px 24px',  // Increased top padding to center textarea
+                        width: '732px',
+                        height: '86px',
+                        backgroundColor: '#1A1A1A',
+                        border: '1px solid #383838',
+                        borderRadius: '24px',
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: '24px',
-                        backdropFilter: 'blur(50px)',  // Maximum blur
-                        WebkitBackdropFilter: 'blur(50px)'  // Safari support
+                        alignItems: 'center',
+                        gap: '16px',
+                        padding: '16px 24px'
                     }}>
-                        {/* Close Button */}
-                        <button
-                            onClick={() => setIsReplyOpen(false)}
-                            style={{
-                                position: 'absolute',
-                                top: '8px',
-                                right: '8px',
-                                width: '42px',
-                                height: '42px',
-                                background: '#1A1A3F',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                borderRadius: '100px',
-                                color: 'rgba(255, 255, 255, 0.7)',
-                                fontSize: '24px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                        >
-                            ×
-                        </button>
-
-                        {/* Reply Input */}
                         <textarea
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             style={{
                                 flex: 1,
-                                background: 'rgba(255, 255, 255, 0.1)',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                borderRadius: '24px',
-                                padding: '16px',
+                                height: '24px',
+                                background: 'transparent',
+                                border: 'none',
                                 color: '#FFFFFF',
                                 fontFamily: 'Montserrat',
-                                fontSize: '16px',
+                                fontSize: '20px',
                                 resize: 'none',
-                                outline: 'none'  // Prevent default focus border
+                                outline: 'none',
+                                lineHeight: '24px',
+                                padding: '0'
                             }}
-                            placeholder="Write your reply..."
+                            placeholder="Right now, I'm particularly interested"
                         />
-
-                        {/* Send Button */}
+                        
                         <button
                             onClick={handleSendReply}
                             style={{
-                                width: '180px',
-                                height: '72px',
+                                width: '120px',
+                                height: '48px',
                                 background: 'linear-gradient(93.06deg, #FF39E0 0%, #AE4FFF 51.56%, #30B3D4 100%)',
                                 border: 'none',
-                                borderRadius: '24px',
+                                borderRadius: '16px',
                                 color: '#FFFFFF',
                                 fontFamily: 'Montserrat',
                                 fontSize: '20px',
                                 fontWeight: 700,
-                                cursor: 'pointer',
-                                alignSelf: 'flex-end'
+                                cursor: 'pointer'
                             }}
                         >
-                            Send Reply
+                            Send
+                        </button>
+
+                        <button
+                            onClick={() => setIsReplyOpen(false)}
+                            style={{
+                                width: '120px',
+                                height: '48px',
+                                background: '#1A1A3F',
+                                border: '1px solid rgba(255, 255, 255, 0.4)',
+                                borderRadius: '16px',
+                                color: '#FFFFFF',
+                                fontFamily: 'Montserrat',
+                                fontSize: '20px',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Cancel
                         </button>
                     </div>
                 )}

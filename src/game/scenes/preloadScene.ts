@@ -158,6 +158,7 @@ export class preloadScene extends Scene {
         this.load.image('chat-hover', 'img/chatHover.png');
         this.load.image('content-hover', 'img/contentHover.png'); 
         this.load.image('write-hover', 'img/writeHover.png');
+        this.load.image('meet-button', 'img/meet.png');
         this.registry.set("gridSize", 50);
         // debugger;
         const { width, height } = calculateGameSize(

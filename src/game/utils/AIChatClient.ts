@@ -5,6 +5,26 @@ class AIChatClient {
     private isStreaming = false;
     // 直接使用服务端 API URL，不再使用代理
     private API_URL = "https://www.emptylab.org/api/chat";
+    private SEARCH_API_URL = "https://www.emptylab.org/api/search";
+
+    // Mock responses for development
+    private mockSearchResponses = [
+        {
+            status: "success",
+            agent_response: "I found a story about Web3 gaming that might interest you. It discusses the integration of blockchain technology in modern gaming platforms.",
+            storyId: "1"
+        },
+        {
+            status: "success",
+            agent_response: "Here's a relevant story about NFT marketplaces and their impact on digital art collections.",
+            storyId: "2"
+        },
+        {
+            status: "success",
+            agent_response: "I discovered a story about decentralized finance (DeFi) and its role in the future of banking.",
+            storyId: "3"
+        }
+    ];
 
     private constructor() { }
 
@@ -22,27 +42,90 @@ class AIChatClient {
         }
 
         try {
-            // 立即显示一个加载状态
             EventBus.emit("chat-loading", true);
-
-            console.log("🚀 Sending message to AI:", message);
             this.isStreaming = true;
+            
             const response = await fetch(this.API_URL, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    // 确保不被代理缓存
-                    "Cache-Control": "no-cache",
-                    "X-Accel-Buffering": "no"
                 },
-                // 确保使用流式传输
                 body: JSON.stringify({
-                    user_id: "0xfA5aC709311146dA718B3fba0a90A3Bd96e7a471",
-                    content: message
+                    wallet: "0xfA5aC709311146dA718B3fba0a90A3Bd96e7a471",
+                    content: message,
                 })
             });
 
-            console.log("📡 Response status:", response.status);
+            if (!response.ok) {
+                throw new Error(`服务器错误: ${response.status}`);
+            }
+
+            // 获取完整响应文本
+            const completeText = await response.text();
+            
+            // 模拟流式输出，每次只发送新的字符
+            for (const char of completeText) {
+                await new Promise(resolve => setTimeout(resolve, 30)); // 控制打字速度
+                EventBus.emit("chat-stream", {
+                    chunk: char,
+                    isComplete: false
+                });
+            }
+
+            // 发送完成事件
+            EventBus.emit("chat-stream", {
+                chunk: "",
+                isComplete: true
+            });
+
+        } catch (error) {
+            console.error("❌ AI回复失败:", error);
+            EventBus.emit("chat-loading", false);
+        } finally {
+            this.isStreaming = false;
+            EventBus.emit("chat-loading", false);
+        }
+    }
+
+    public async sendSearchMessage(message: string): Promise<void> {
+        if (this.isStreaming) {
+            console.warn("⚠️ 正在等待上一条消息的回复");
+            return;
+        }
+
+        try {
+            EventBus.emit("chat-loading", true);
+            console.log("🔍 Sending search message to AI:", message);
+            this.isStreaming = true;
+
+            // Mock API response
+            const mockResponse = this.getMockSearchResponse();
+            console.log("Mock search response:", mockResponse);
+
+            // Store storyId in localStorage
+            if (mockResponse.status === "success" && mockResponse.storyId) {
+                localStorage.setItem('lastSearchStoryId', mockResponse.storyId);
+            }
+
+            // Simulate streaming response like in sendMessage
+            const response = {
+                body: new ReadableStream({
+                    async start(controller) {
+                        // Split the response into chunks
+                        const chunks = mockResponse.agent_response.match(/.{1,3}/g) || [];
+                        
+                        for (const chunk of chunks) {
+                            await new Promise(resolve => setTimeout(resolve, 30));
+                            controller.enqueue(new TextEncoder().encode(JSON.stringify({
+                                type: "agent_answer",
+                                content: chunk
+                            })));
+                        }
+                        
+                        controller.close();
+                    }
+                })
+            };
 
             if (!response.body) {
                 console.error("No response body received.");
@@ -69,7 +152,6 @@ class AIChatClient {
                     try {
                         const chunkData = JSON.parse(jsonStr);
                         if (chunkData.type === "agent_answer") {
-                            // 添加一个小延迟模拟打字效果
                             await new Promise(resolve => setTimeout(resolve, 30));
                             EventBus.emit("chat-stream", {
                                 chunk: chunkData.content,
@@ -89,16 +171,22 @@ class AIChatClient {
 
             // Send completion event
             EventBus.emit("chat-stream", {
-                chunk: "",  // No need to send content in completion event
+                chunk: "",
                 isComplete: true
             });
 
         } catch (error) {
-            console.error("❌ AI回复失败:", error);
+            console.error("❌ Search AI回复失败:", error);
             EventBus.emit("chat-loading", false);
         } finally {
             this.isStreaming = false;
         }
+    }
+
+    private getMockSearchResponse() {
+        // Randomly select a mock response
+        const randomIndex = Math.floor(Math.random() * this.mockSearchResponses.length);
+        return this.mockSearchResponses[randomIndex];
     }
 }
 

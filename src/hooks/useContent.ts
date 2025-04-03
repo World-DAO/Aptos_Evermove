@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { usePost } from "./usePost";
 import { useGet } from "./useGet";
-import { Story } from "@/components/StoryList";
+import { Story } from "@/types/story";
 
 interface ContentResponse {
     success: boolean;
@@ -40,16 +40,21 @@ export function useContent() {
             setLoading(true);
             // Force revalidation and wait for new data
             const newData = await refreshStories();
+            console.log("Fetched data:", newData);
             
-            if (newData?.success) {
-                const uniqueStories = Array.from(
-                    new Map(newData.dailyStories.map(story => [story.id, story])).values()
-                );
-                setStories(uniqueStories);
-                return uniqueStories;
+            if (newData?.success && Array.isArray(newData.dailyStories)) {
+                console.log("Setting stories:", newData.dailyStories);
+                setStories(newData.dailyStories);
+                return newData.dailyStories;
+            } else if (Array.isArray(newData)) {
+                // 如果返回的直接是数组
+                console.log("Setting raw stories:", newData);
+                setStories(newData);
+                return newData;
             }
             return [];
         } catch (err) {
+            console.error("Error fetching stories:", err);
             setError("Failed to fetch stories");
             return [];
         } finally {
@@ -122,6 +127,7 @@ export function useContent() {
         loading,
         error,
         stories,
+        setStories,
         likedStories,
         createStory: handlePublishStory,
         fetchStories: handleFetchStories,

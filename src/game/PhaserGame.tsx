@@ -5,7 +5,7 @@ import { ReactPhaserBridge } from './utils/login';
 import { Mail } from "@/components/mail"
 import { ContentWindow } from "@/components/ContentWindow";
 import { WriteWindow } from "@/components/WriteWindow";
-
+import { ContentList } from "@/components/ContentList";
 export interface IRefPhaserGame {
     game: Phaser.Game | null;
     scene: Phaser.Scene | null;
@@ -64,6 +64,7 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame
             <Mail />
             <ContentWindow />
             <WriteWindow />
+            <ContentList />
         </div >
     );
 });
