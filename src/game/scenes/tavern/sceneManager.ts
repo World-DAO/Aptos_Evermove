@@ -86,16 +86,18 @@ export class SceneManager {
         // 添加头像
         const userData = this.scene.registry.get("userData");
         console.log(userData);
-        const avatar = this.scene.add
-            .circle(40, 30, 20, 0x4eeaff, 0.8)
+        const userLogo = this.scene.add
+            .image(this.scene.cameras.main.width - 405, 88, "profile") // 调整位置
+            .setDisplaySize(24, 24) // 增加logo尺寸
+            .setOrigin(0.5)
             .setScrollFactor(0)
             .setDepth(1001);
 
         // 添加地址文本
         const addressText = this.scene.add
             .text(
-                70,
-                20,
+                this.scene.cameras.main.width - 605,
+                88,
                 `${String(userData.walletAddress).slice(0, 4)}...${String(
                     userData.walletAddress
                 ).slice(-4)}`,
@@ -122,9 +124,9 @@ export class SceneManager {
             .setDepth(1000)
             .setAlpha(0.2);
 
-        const suiLogo = this.scene.add
-            .image(this.scene.cameras.main.width - 105, 28, "sui_logo") // 调整位置
-            .setDisplaySize(20, 24) // 增加logo尺寸
+        const aptLogo = this.scene.add
+            .image(this.scene.cameras.main.width - 405, 28, "apt_logo") // 调整位置
+            .setDisplaySize(24, 24) // 增加logo尺寸
             .setOrigin(0.5)
             .setScrollFactor(0)
             .setDepth(1001);
@@ -148,10 +150,10 @@ export class SceneManager {
 
         // 将元素添加到UI数组
         this.UI.push(
-            avatar as any,
+            userLogo as any,
             addressText as any,
             balanceBg as any, // 添加背景到UI数组
-            suiLogo as any,
+            aptLogo as any,
             this.tokenAmount as any
         );
     }
