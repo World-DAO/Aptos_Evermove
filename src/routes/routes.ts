@@ -104,6 +104,24 @@ router.post("/stories", authenticate, async (req: Request, res: Response) => {
     try {
         // 将 isPay 传递给 service 层，默认为 false（普通故事）或 true（付费故事）
         const story = await StoryService.publishUserStory(address, title, storyText, isPay);
+        // 转发至 ai 端
+        try {
+            await fetch('https://emptylab.org/api/store_rift', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    wallet: address,
+                    title: title,
+                    content: storyText
+                })
+            });
+        } catch (error) {
+            console.error("转发到 AI 后端失败:", error);
+            // 这里我们选择继续执行，不影响主流程
+        }
+
         res.json({ success: true, story });
     } catch (error: any) {
         res.status(500).json({ success: false, reason: error.message });
