@@ -40,17 +40,17 @@ export default class Dialog {
         // Dialog box background
         this.dialogBox = this.scene.add.image(
             bgWidth / 2,
-            bgHeight - 200,
+            bgHeight - 220,
             'dialog-box'
         )
-        .setDisplaySize(1300, 148)
+        .setDisplaySize(1300, 192)
         .setScrollFactor(0)
         .setDepth(10);
 
         // Add close button at top right of dialog box
         const closeButton = this.scene.add.image(
-            bgWidth / 2 + 620,  // Right edge of dialog + some padding
-            bgHeight - 250,     // Top of dialog - some padding
+            bgWidth / 2 + 620,
+            bgHeight - 280,
             'close-button'
         )
         .setDisplaySize(24, 24)
@@ -64,17 +64,17 @@ export default class Dialog {
 
         // Store profile pic reference
         this.profilePic = this.scene.add.image(
-            bgWidth / 2 - 600,
-            bgHeight - 200,
+            bgWidth / 2 - 580,
+            bgHeight - 230,
             'profile-pic'
         )
-        .setDisplaySize(48, 48)
+        .setDisplaySize(72, 72)
         .setScrollFactor(0)
         .setDepth(11);
 
         // Adjust text position to be next to profile
         this.responseText = this.scene.add
-            .text(bgWidth / 2 - 540, bgHeight - 200, "", {
+            .text(bgWidth / 2 - 520, bgHeight - 230, "", {
                 fontSize: "20px",
                 color: "#FFFFFF",
                 fontFamily: "Montserrat",
@@ -242,11 +242,10 @@ export default class Dialog {
 
         // Create meet button using just the image
         this.meetButton = this.scene.add.image(
-            350, // x position
-            this.scene.cameras.main.height - 150, // y position (above input)
+            410, // x position
+            this.scene.cameras.main.height - 160, // y position (above input)
             'meet-button'
         )
-        .setScale(0.6) // Make the button smaller
         .setInteractive({ useHandCursor: true })
         .setDepth(11)
         .setScrollFactor(0);
@@ -262,8 +261,9 @@ export default class Dialog {
 
         // Add click handler
         this.meetButton.on('pointerdown', () => {
+            const storyId = localStorage.getItem('lastSearchStoryId');
             this.hide();
-            EventBus.emit('open-content');
+            EventBus.emit('open-content-byid', storyId);
         });
     }
 

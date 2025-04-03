@@ -10,7 +10,7 @@ export function ContentWindow({ className }: ContentWindowProps) {
     const [currentStory, setCurrentStory] = useState<Story | null>(null);
     const [isReplyOpen, setIsReplyOpen] = useState(false);
     const [replyText, setReplyText] = useState('');
-    const { likedStories, sendWhiskey, sendReply } = useContent();
+    const { likedStories, sendWhiskey, sendReply, getStoryById } = useContent();
 
     useEffect(() => {
         const handleOpenContentWithStory = (story: Story) => {
@@ -19,12 +19,25 @@ export function ContentWindow({ className }: ContentWindowProps) {
             setCurrentStory(story);
         };
 
+        const handleOpenContentById = async (storyId: string) => {
+            if (storyId) {
+                const story = await getStoryById(storyId);
+                if (story) {
+                    console.log("Opening content window with fetched story:", story);
+                    setIsContentOpen(true);
+                    setCurrentStory(story);
+                }
+            }
+        };
+
         EventBus.on("open-content-with-story", handleOpenContentWithStory);
+        EventBus.on("open-content-byid", handleOpenContentById);
         
         return () => {
             EventBus.removeListener("open-content-with-story");
+            EventBus.removeListener("open-content-byid");
         };
-    }, []);
+    }, [getStoryById]);
 
     if (!isContentOpen || !currentStory) return null;
 
@@ -216,14 +229,14 @@ export function ContentWindow({ className }: ContentWindowProps) {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        padding: '16px 24px'
+                        padding: '12px 24px'
                     }}>
                         <textarea
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             style={{
                                 flex: 1,
-                                height: '24px',
+                                height: '32px',
                                 background: 'transparent',
                                 border: 'none',
                                 color: '#FFFFFF',
@@ -231,8 +244,9 @@ export function ContentWindow({ className }: ContentWindowProps) {
                                 fontSize: '20px',
                                 resize: 'none',
                                 outline: 'none',
-                                lineHeight: '24px',
-                                padding: '0'
+                                lineHeight: '32px',
+                                padding: '0',
+                                marginTop: '8px'
                             }}
                             placeholder="Right now, I'm particularly interested"
                         />

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { usePost } from "./usePost";
 import { useGet } from "./useGet";
 import { Story } from "@/types/story";
+import { axiosInstance } from "@/lib/axios";
 
 interface ContentResponse {
     success: boolean;
@@ -123,6 +124,19 @@ export function useContent() {
         }
     };
 
+    const handleGetStoryById = async (storyId: string) => {
+        try {
+            const response = await axiosInstance.get<ContentResponse>(`/stories/by_id/${storyId}`);
+            if (response.data.success) {
+                return response.data.story;
+            }
+            return null;
+        } catch (err) {
+            console.error("Failed to fetch story:", err);
+            return null;
+        }
+    };
+
     return {
         loading,
         error,
@@ -133,5 +147,6 @@ export function useContent() {
         fetchStories: handleFetchStories,
         sendWhiskey: handleSendWhiskey,
         sendReply: handleSendReply,
+        getStoryById: handleGetStoryById,
     };
 }

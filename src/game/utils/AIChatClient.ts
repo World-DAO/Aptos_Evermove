@@ -12,17 +12,17 @@ class AIChatClient {
         {
             status: "success",
             agent_response: "I found a story about Web3 gaming that might interest you. It discusses the integration of blockchain technology in modern gaming platforms.",
-            storyId: "1"
+            storyId: "20"
         },
         {
             status: "success",
             agent_response: "Here's a relevant story about NFT marketplaces and their impact on digital art collections.",
-            storyId: "2"
+            storyId: "21"
         },
         {
             status: "success",
             agent_response: "I discovered a story about decentralized finance (DeFi) and its role in the future of banking.",
-            storyId: "3"
+            storyId: "22"
         }
     ];
 
@@ -98,6 +98,9 @@ class AIChatClient {
             console.log("🔍 Sending search message to AI:", message);
             this.isStreaming = true;
 
+            // 添加初始延迟，模拟网络请求时间
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
             // Mock API response
             const mockResponse = this.getMockSearchResponse();
             console.log("Mock search response:", mockResponse);
@@ -112,16 +115,18 @@ class AIChatClient {
                 body: new ReadableStream({
                     async start(controller) {
                         // Split the response into chunks
-                        const chunks = mockResponse.agent_response.match(/.{1,3}/g) || [];
+                        const chunks = mockResponse.agent_response.match(/.{1,2}/g) || [];  // 减小每个chunk的大小
                         
                         for (const chunk of chunks) {
-                            await new Promise(resolve => setTimeout(resolve, 30));
+                            await new Promise(resolve => setTimeout(resolve, 100));  // 增加每个chunk之间的延迟
                             controller.enqueue(new TextEncoder().encode(JSON.stringify({
                                 type: "agent_answer",
                                 content: chunk
                             })));
                         }
                         
+                        // 添加结束延迟
+                        await new Promise(resolve => setTimeout(resolve, 500));
                         controller.close();
                     }
                 })
