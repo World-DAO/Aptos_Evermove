@@ -119,7 +119,6 @@ router.post("/stories", authenticate, async (req: Request, res: Response) => {
             });
         } catch (error) {
             console.error("转发到 AI 后端失败:", error);
-            // 这里我们选择继续执行，不影响主流程
         }
 
         res.json({ success: true, story });
