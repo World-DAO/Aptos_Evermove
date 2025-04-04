@@ -1,0 +1,10 @@
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS NFT_Mint (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nft_object_id TEXT NOT NULL UNIQUE,
+    owner TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES Session (session_id) ON DELETE CASCADE
+);

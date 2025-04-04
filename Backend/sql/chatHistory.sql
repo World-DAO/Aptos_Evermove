@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS ChatHistory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    role TEXT CHECK (role IN ('user', 'ai')) NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
