@@ -1,0 +1,1 @@
+aptos move upgrade-object --address-name 0xfc1141d8a5e791b52227cd9436efae6c5066645c7f4f9a759f1415f7a5471cb3 --object-address 0x438c29191ed6ac6687f887a22e75600277bd4beafb89c0d3308229c0a718e37c

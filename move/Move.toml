@@ -1,0 +1,19 @@
+[package]
+name = "apt"
+version = "1.0.0"
+authors = []
+
+[addresses]
+tes = "0xfc1141d8a5e791b52227cd9436efae6c5066645c7f4f9a759f1415f7a5471cb3"
+hollis = "0xfc1141d8a5e791b52227cd9436efae6c5066645c7f4f9a759f1415f7a5471cb3"
+mooncl = "0x98a71c7bb7fe70e92185d12477a1f9553cf4f2312faa469ef98a35810c614c4a"
+test = "0xcbcbe951c24996fd3a344763df19ed55dbcadc852de3d30a9be88e8170e1b20e"
+
+[dev-addresses]
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-framework.git"
+rev = "testnet"
+subdir = "aptos-framework"
+
+[dev-dependencies]
