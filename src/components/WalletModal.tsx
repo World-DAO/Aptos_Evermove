@@ -27,12 +27,8 @@ export function WalletModal({ onClose, onGameStart }: WalletModalProps) {
     const { wallets, connect, disconnect, account, connected } = useWallet();
     const [error, setError] = useState<string>("");
 
-    // 钱包过滤和排序
-    const filteredWallets = wallets
-        .filter(wallet => {
-            console.log('Available wallet:', wallet.name);
-            return wallet.name === 'Continue with Google' || wallet.name === 'OKX Wallet';
-        })
+    // 修改钱包过滤和排序逻辑
+    const filteredWallets = [...wallets]
         .sort((a, b) => {
             // 确保 Google 钱包总是排在第一位
             if (a.name === 'Continue with Google') return -1;
@@ -40,27 +36,28 @@ export function WalletModal({ onClose, onGameStart }: WalletModalProps) {
             return 0;
         });
 
-    type WalletName = 'Continue with Google' | 'OKX Wallet';
+    // 修改类型定义，使用字符串类型来支持所有钱包
+    type WalletName = string;
 
+    // 修改钱包样式配置
+    const getWalletStyle = (walletName: string) => {
+        // Google 钱包使用特殊样式
+        if (walletName === 'Continue with Google') {
+            return {
+                border: 'linear-gradient(90deg, #FF0080 0%, #8A2BE2 50%, #4285F4 100%)',
+                bg: 'linear-gradient(90deg, rgba(255,0,128,0.1) 0%, rgba(138,43,226,0.1) 50%, rgba(66,133,244,0.1) 100%)',
+                shadow: '#FF0080',
+                icon: <GoogleIcon />
+            };
+        }
 
-    const walletStyles: Record<WalletName, {
-        border: string;
-        bg: string;
-        shadow: string;
-        icon: React.ReactNode;
-    }> = {
-        'Continue with Google': {
-            border: 'linear-gradient(90deg, #FF0080 0%, #8A2BE2 50%, #4285F4 100%)',
-            bg: 'linear-gradient(90deg, rgba(255,0,128,0.1) 0%, rgba(138,43,226,0.1) 50%, rgba(66,133,244,0.1) 100%)',
-            shadow: '#FF0080',
-            icon: <GoogleIcon />
-        },
-        'OKX Wallet': {
+        // 其他钱包使用统一的透明样式
+        return {
             border: '#ffffff',
             bg: 'transparent',
             shadow: '#ffffff',
             icon: null
-        }
+        };
     };
 
     return (
@@ -103,7 +100,7 @@ export function WalletModal({ onClose, onGameStart }: WalletModalProps) {
                     <ul className="list-none p-0 m-0 flex flex-col items-center">
                         {filteredWallets.length > 0 ? (
                             filteredWallets.map((wallet) => {
-                                const style = walletStyles[wallet.name as WalletName];
+                                const style = getWalletStyle(wallet.name);
                                 return (
                                     <li key={wallet.name} className="mb-[10px] w-[280px]">
                                         <button
@@ -130,7 +127,7 @@ export function WalletModal({ onClose, onGameStart }: WalletModalProps) {
                                                        border-2 border-white/50 hover:border-white`
                                                 }`}
                                         >
-                                            {typeof style.icon === 'string' ? style.icon : style.icon}
+                                            {getWalletStyle(wallet.name).icon}
                                             <span className={wallet.name === 'Continue with Google' ? 'ml-2' : ''}>
                                                 {wallet.name === 'Continue with Google' ? 'Continue with Google' : `Connect ${wallet.name}`}
                                             </span>
