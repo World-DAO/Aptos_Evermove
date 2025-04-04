@@ -187,6 +187,64 @@ export class loginScene extends Scene {
         // 使用方式 (替换原来的title创建代码)
         const title = createGradientText(this, width / 2, height * 0.25, "Welcome to Mooncl", "66px");
 
+        // 修改 introduction 文本，分成两行显示
+        const introText1 = this.add.text(
+            width / 2,
+            height * 0.4,
+            "Aptos Board",
+            {
+                fontSize: "15px",
+                fontFamily: "Arial, sans-serif",
+                color: "#9e9e9e",
+                fontStyle: "bold",
+                shadow: {
+                    offsetX: 2,
+                    offsetY: 2,
+                    color: "rgba(0, 0, 0, 0.3)",
+                    blur: 3,
+                    fill: true
+                }
+            }
+        ).setOrigin(0.5);
+
+        const introText2 = this.add.text(
+            width / 2,
+            height * 0.4 + 20,  // 第二行位置下移 30 像素
+            "Connecting Aptos Ecosystem Partners Effortlessly",     // 第二行文本
+            {
+                fontSize: "15px",  // 第二行字体稍小
+                fontFamily: "Arial, sans-serif",
+                color: "#a8a8a8",  // 第二行使用稍浅的灰色
+                fontStyle: "bold",
+                shadow: {
+                    offsetX: 2,
+                    offsetY: 2,
+                    color: "rgba(0, 0, 0, 0.3)",
+                    blur: 3,
+                    fill: true
+                }
+            }
+        ).setOrigin(0.5);
+
+        // 为文本添加淡入效果
+        introText1.setAlpha(0);
+        this.tweens.add({
+            targets: introText1,
+            alpha: 0.8,  // 设置最终透明度为 0.8，让它看起来更柔和
+            duration: 800,
+            ease: 'Power2',
+            delay: 200
+        });
+
+        introText2.setAlpha(0);
+        this.tweens.add({
+            targets: introText2,
+            alpha: 0.8,  // 设置最终透明度为 0.8，让它看起来更柔和
+            duration: 800,
+            ease: 'Power2',
+            delay: 200
+        });
+
         // 移除原来的DOM元素容器（不需要了）
         // this.connectButtonContainer.destroy(); // 如果之前创建过的话
 
