@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat API Demo</title>
+    <style>
+        #output {
+            font-family: monospace;
+            white-space: pre-wrap;
+            border: 1px solid #ddd;
+            padding: 10px;
+            min-height: 200px;
+            background: #f9f9f9;
+            margin-top: 10px;
+        }
+        .typing-cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1em;
+            background: #333;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        #userInput {
+            width: 300px;
+            padding: 8px;
+        }
+        button {
+            padding: 8px 15px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chat Streaming Demo</h1>
+    <div>
+        <input type="text" id="wallet" placeholder="Your wallet address" value="0x123...abc">
+        <input type="text" id="userInput" placeholder="Type your message...">
+        <button id="sendBtn">Send</button>
+    </div>
+    <div id="output"></div>
+
+    <script>
+        document.getElementById('sendBtn').addEventListener('click', sendChatRequest);
+
+        // 模拟流式输出的核心函数
+        async function simulateStreaming(text, outputElement, speed = 30) {
+            return new Promise(resolve => {
+                let i = 0;
+                const timer = setInterval(() => {
+                    if (i < text.length) {
+                        // 更新显示内容（保留光标）
+                        outputElement.innerHTML = 
+                            text.substring(0, i + 1) + 
+                            '<span class="typing-cursor"></span>';
+                        i++;
+                        // 自动滚动
+                        outputElement.scrollTop = outputElement.scrollHeight;
+                    } else {
+                        clearInterval(timer);
+                        resolve();
+                    }
+                }, speed);
+            });
+        }
+
+        async function sendChatRequest() {
+            const wallet = document.getElementById('wallet').value;
+            const prompt = document.getElementById('userInput').value;
+            const output = document.getElementById('output');
+            
+            if (!prompt.trim()) {
+                alert("请输入消息内容");
+                return;
+            }
+
+            output.innerHTML = '<span class="typing-cursor"></span>';
+            
+            try {
+                // 先显示加载状态
+                output.innerHTML = '正在连接服务器...<span class="typing-cursor"></span>';
+                let remote_url = 'https://www.emptylab.org/api/chat';
+                let local_url = 'http://localhost:8080/api/chat';
+
+                const response = await fetch(local_url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        wallet: wallet,
+                        content: prompt
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`服务器错误: ${response.status}`);
+                }
+
+                // 获取完整响应（非流式）
+                const completeText = await response.text();
+                
+                // 清除加载状态
+                output.innerHTML = '<span class="typing-cursor"></span>';
+                
+                // 开始模拟流式输出
+                await simulateStreaming(completeText, output);
+                
+            } catch (error) {
+                output.innerHTML = `错误: ${error.message}`;
+                console.error('请求错误:', error);
+                
+                // 本地回退测试
+                if (confirm('远程服务器失败，是否尝试本地连接？')) {
+                    try {
+                        const localResponse = await fetch('http://localhost:8080/api/chat', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                wallet: wallet,
+                                content: prompt
+                            })
+                        });
+                        
+                        const localText = await localResponse.text();
+                        await simulateStreaming(localText, output);
+                    } catch (localError) {
+                        output.innerHTML = `本地连接也失败: ${localError.message}`;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
