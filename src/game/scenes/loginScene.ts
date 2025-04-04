@@ -96,7 +96,7 @@ export class loginScene extends Scene {
         const fullHeight = window.innerHeight;
 
         const createGradientText = (scene: Phaser.Scene, x: number, y: number, text: string, size: string) => {
-            const fontFamily = 'sans-serif';
+            const fontFamily = 'SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif';
             const container = scene.add.container(x, y);
 
             // 分割文本

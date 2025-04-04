@@ -173,7 +173,12 @@ export function ReactPhaserBridge() {
 
   return (
     <>
-      {isModalOpen && <WalletModal onClose={() => setIsModalOpen(false)} onGameStart={handleGameStart} />}
+      {isModalOpen
+        &&
+        <WalletModal
+          onClose={() => setIsModalOpen(false)} onGameStart={handleGameStart}
+        />
+      }
     </>
   );
 }
