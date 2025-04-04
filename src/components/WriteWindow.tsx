@@ -17,6 +17,7 @@ export function WriteWindow({ className }: WriteWindowProps) {
     const FUNCTION_NAME = "add";
     const [isWriteOpen, setIsWriteOpen] = useState(false);
     const [writeContent, setWriteContent] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const { createStory, loading } = useContent();
     const { account, signAndSubmitTransaction } = useWallet();
 
@@ -48,26 +49,38 @@ export function WriteWindow({ className }: WriteWindowProps) {
 
     const handlePublishAndEarn = async () => {
         if (!writeContent.trim()) return;
-        const response = await signAndSubmitTransaction({
-          sender: account.address,
-          data: {
-            function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::${FUNCTION_NAME}`,
-            functionArguments: [],
-          },
-        });
-        // if you want to wait for transaction
-        try {
-          await aptos.waitForTransaction({ transactionHash: response.hash });
-        } catch (error) {
-          console.error(error);
+        if (!account) {
+            alert("Please connect your wallet first!");
+            return;
         }
-        // Generate title from first 10 characters
-        const autoTitle = writeContent.trim().slice(0, 15) + "...";
-        
-        const result = await createStory(autoTitle, writeContent, true);
-        if (result.success) {
-            setWriteContent("");
-            setIsWriteOpen(false);
+        setIsLoading(true);
+        try {
+            const response = await signAndSubmitTransaction({
+                sender: account.address,
+                data: {
+                    function: `${CONTRACT_ADDRESS}::${MODULE_NAME}::${FUNCTION_NAME}`,
+                    functionArguments: [],
+                },
+            });
+            
+            try {
+                await aptos.waitForTransaction({ transactionHash: response.hash });
+                alert("Transaction successful! Your content will be prioritized in recommendations.");
+            } catch (error) {
+                console.error(error);
+            }
+            
+            const autoTitle = writeContent.trim().slice(0, 15) + "...";
+            const result = await createStory(autoTitle, writeContent, true);
+            if (result.success) {
+                setWriteContent("");
+                setIsWriteOpen(false);
+            }
+        } catch (error) {
+            console.error("Transaction error:", error);
+            alert("Failed to submit transaction. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -86,6 +99,36 @@ export function WriteWindow({ className }: WriteWindowProps) {
             backgroundColor: 'rgba(0, 0, 0, 0.3)',
             zIndex: 999
         }}>
+            {isLoading && (
+                <div style={{
+                    position: 'fixed',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    backgroundColor: 'rgba(26, 26, 63, 0.9)',
+                    padding: '20px',
+                    borderRadius: '12px',
+                    textAlign: 'center',
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        width: '40px',
+                        height: '40px',
+                        border: '4px solid #f3f3f3',
+                        borderTop: '4px solid #FF39E0',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite',
+                        margin: '0 auto 15px'
+                    }} />
+                    <div style={{
+                        color: '#FFFFFF',
+                        fontFamily: 'Montserrat',
+                        fontSize: '16px'
+                    }}>
+                        Processing your transaction...
+                    </div>
+                </div>
+            )}
             <div style={{
                 width: '780px',
                 height: '700px',
@@ -116,7 +159,7 @@ export function WriteWindow({ className }: WriteWindowProps) {
                         marginBottom: '24px',
                         alignSelf: 'flex-start'
                     }}>
-                        Hello! New friends👋
+                       👋Hi there, Aptos frens!
                     </h2>
 
                     <div style={{
@@ -127,7 +170,7 @@ export function WriteWindow({ className }: WriteWindowProps) {
                         marginBottom: '24px',
                         alignSelf: 'flex-start'
                     }}>
-                        Share your Web3 journey and connect with like-minded explorers. Your story matters!
+                        Looking for Aptos builders, creators, or projects? Post your needs and start meaningful collaborations.
                     </div>
 
                     {/* Story Input */}
@@ -176,7 +219,7 @@ export function WriteWindow({ className }: WriteWindowProps) {
                             opacity: !writeContent.trim() ? '0.5' : '1'
                         }}
                     >
-                        Publish and Earn
+                        Promoted Post
                     </button>
                     <button
                         onClick={handlePublish}
@@ -195,7 +238,7 @@ export function WriteWindow({ className }: WriteWindowProps) {
                             opacity: !writeContent.trim() ? '0.5' : '1'
                         }}
                     >
-                        Publish
+                        Post
                     </button>
                 </div>
 

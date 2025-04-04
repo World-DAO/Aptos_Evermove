@@ -106,7 +106,7 @@ export default class Dialog {
         Object.assign(this.inputField.style, {
             width: '100%',
             height: '74px',
-            padding: '0 70px 0 120px',
+            padding: '0 70px 0 140px',
             backgroundColor: '#1A1A1A',
             color: '#FFFFFF',
             border: '1px solid #383838',

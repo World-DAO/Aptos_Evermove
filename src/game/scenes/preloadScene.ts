@@ -146,7 +146,7 @@ export class preloadScene extends Scene {
         this.load.image("button_chat", "img/button_chat.png");
         this.load.image("bar_menu", "img/bar_menu.png");
         this.load.image("bar_bottle", "img/bar_bottle.png");
-        this.load.image("apt_logo", "img/apt_logo.png");
+        this.load.image("wine_logo", "img/wineIcon.png");
         this.load.image('button_content', 'img/button_content.png');
         this.load.image('button_write', 'img/button_write.png');
         this.load.image('button_chat', 'img/button_chat.png');
@@ -161,6 +161,8 @@ export class preloadScene extends Scene {
         this.load.image('profile', 'img/page/user.png');
         this.load.image('page', 'img/page/wine.png');
         this.load.image('meet-button', 'img/meet.png');
+        this.load.image('profile-rectangle', 'img/profileRectangle.png');
+        this.load.image('point-rectangle', 'img/pointRectangle.png');
         this.registry.set("gridSize", 50);
         // debugger;
         const { width, height } = calculateGameSize(

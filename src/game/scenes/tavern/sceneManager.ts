@@ -83,78 +83,78 @@ export class SceneManager {
     }
 
     private createTopBar() {
-        // 添加头像
         const userData = this.scene.registry.get("userData");
         console.log(userData);
-        const userLogo = this.scene.add
-            .image(this.scene.cameras.main.width - 405, 88, "profile") // 调整位置
-            .setDisplaySize(24, 24) // 增加logo尺寸
-            .setOrigin(0.5)
-            .setScrollFactor(0)
-            .setDepth(1001);
 
-        // 添加地址文本
-        const addressText = this.scene.add
-            .text(
-                this.scene.cameras.main.width - 605,
-                88,
-                `${String(userData.walletAddress).slice(0, 4)}...${String(
-                    userData.walletAddress
-                ).slice(-4)}`,
-                {
-                    fontFamily: "Arial",
-                    fontSize: "16px",
-                    color: "#4EEAFF",
-                }
-            )
-            .setScrollFactor(0)
-            .setDepth(1001);
-
-        // 添加背景层
-        const balanceBg = this.scene.add
-            .rectangle(
-                this.scene.cameras.main.width - 65, // 向左移动以适应更大的宽度
-                28,
-                120, // 增加背景宽度
-                32, // 增加背景高度
-                0x9d5bde
-            )
+        // 积分背景图片 (左侧)
+        const pointsBg = this.scene.add
+            .image(this.scene.cameras.main.width - 260, 48, 'point-rectangle')
             .setOrigin(0.5)
             .setScrollFactor(0)
             .setDepth(1000)
-            .setAlpha(0.2);
+            .setDisplaySize(109, 44);
 
-        const aptLogo = this.scene.add
-            .image(this.scene.cameras.main.width - 405, 28, "apt_logo") // 调整位置
-            .setDisplaySize(24, 24) // 增加logo尺寸
+        // 钱包背景图片 (右侧)
+        const walletBg = this.scene.add
+            .image(this.scene.cameras.main.width - 120, 48, 'profile-rectangle')
+            .setOrigin(0.5)
+            .setScrollFactor(0)
+            .setDepth(1000)
+            .setDisplaySize(159, 44);
+
+        // 酒杯图标 (左侧)
+        const wineLogo = this.scene.add
+            .image(this.scene.cameras.main.width - 290, 48, "wine_logo")
+            .setDisplaySize(24, 24)
             .setOrigin(0.5)
             .setScrollFactor(0)
             .setDepth(1001);
 
-        // 添加代币数量
-        this.tokenAmount = this.scene.add
+        // 积分文本 (左侧)
+        const tokenAmount = this.scene.add
+            .text(this.scene.cameras.main.width - 270, 48, "11,230", {
+                fontFamily: "Montserrat",
+                fontSize: "16px",
+                color: "#FFFFFF",
+            })
+            .setOrigin(0, 0.5)
+            .setScrollFactor(0)
+            .setDepth(1001);
+
+        // Profile图标 (右侧)
+        const userLogo = this.scene.add
+            .image(this.scene.cameras.main.width - 170, 48, "profile")
+            .setDisplaySize(20, 20)
+            .setOrigin(0.5)
+            .setScrollFactor(0)
+            .setDepth(1001);
+
+        // 钱包地址文本 (右侧)
+        const addressText = this.scene.add
             .text(
-                this.scene.cameras.main.width - 25, // 调整位置
-                18, // 微调垂直位置以保持居中
-                `${Number(userData.suiBalance).toFixed(2)}`,
+                this.scene.cameras.main.width - 150,
+                48,
+                `${String(userData.walletAddress).slice(0, 6)}...${String(
+                    userData.walletAddress
+                ).slice(-4)}`,
                 {
-                    fontFamily: "Arial",
-                    fontSize: "20px", // 增加字体大小
-                    color: "#4EEAFF",
-                    align: "right",
+                    fontFamily: "Montserrat",
+                    fontSize: "16px",
+                    color: "#FFFFFF",
                 }
             )
-            .setOrigin(1, 0)
+            .setOrigin(0, 0.5)
             .setScrollFactor(0)
             .setDepth(1001);
 
         // 将元素添加到UI数组
         this.UI.push(
+            pointsBg as any,
+            walletBg as any,
+            wineLogo as any,
+            tokenAmount as any,
             userLogo as any,
-            addressText as any,
-            balanceBg as any, // 添加背景到UI数组
-            aptLogo as any,
-            this.tokenAmount as any
+            addressText as any
         );
     }
 
@@ -278,7 +278,7 @@ export class SceneManager {
         this.barman = new Barman(
             this.scene,
             7 * this.gridSize * scaleFactor,
-            6 * this.gridSize * scaleFactor,
+            5.83 * this.gridSize * scaleFactor,
             "barwoman"
         );
         this.barman.sprite.setInteractive();

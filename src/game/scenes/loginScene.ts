@@ -103,22 +103,21 @@ export class loginScene extends Scene {
             const prefix = "Welcome to ";
             const highlight = "Mooncl";
             const style = {
-                fontSize: size,
-                fontFamily,
-                fontWeight: 'bold',
-                stroke: '#000000',
-                strokeThickness: 2
+                fontSize: '80px',
+                fontFamily: 'Space Grotesk',
+                fontWeight: '700',
+                color: '#FFFFFF'
             };
 
             // 创建前缀文本 (白色)
             const prefixText = scene.add.text(0, 0, prefix, {
                 ...style,
-                color: '#ffffff'
+                color: '#FFFFFF'
             });
             container.add(prefixText);
 
             // 创建Mooncl渐变文本
-            const gradientColors = ['#ff69b4', '#da70d6', '#9932cc', '#8a2be2', '#4285F4']; // 粉红 -> 兰花紫 -> 深兰花紫 -> 蓝紫 -> 蓝色
+            const gradientColors = ['#FF3BFF', '#A341FF', '#28B4FF']; // 更新为新的渐变色
 
             // 先创建所有字符测量总宽度
             let highlightWidth = 0;
@@ -154,38 +153,48 @@ export class loginScene extends Scene {
                     }
                 );
                 container.add(charText);
-                currentX += charText.width; // 使用实际字符宽度
+                currentX += charText.width;
             }
 
-            // // 添加动画效果
-            // scene.tweens.add({
-            //     targets: container,
-            //     scaleX: { from: 0.98, to: 1.02 },
-            //     scaleY: { from: 0.98, to: 1.02 },
-            //     duration: 2000,
-            //     ease: 'Sine.easeInOut',
-            //     yoyo: true,
-            //     repeat: -1
-            // });
-
-            // 添加发光效果
+            // 移除发光效果
             container.list.forEach((child) => {
                 if (child instanceof Phaser.GameObjects.Text) {
-                    child.setShadow(2, 2, 'rgba(100, 200, 255, 0.7)', 3, true, true);
+                    child.setShadow(0, 0, 'transparent', 0);
                 }
             });
 
             return container;
         };
 
-        // 使用方式 (替换原来的title创建代码)
-        const title = createGradientText(this, width / 2, height * 0.25, "Welcome to Mooncl", "66px");
+        // 使用方式
+        const title = createGradientText(this, width / 2, height * 0.25, "Welcome to Mooncl", "80px");
+
+        // 添加副标题
+        const subtitle = this.add.text(width / 2, 420, "Aptos Board", {
+            fontSize: "20px",
+            color: "#999999",
+            fontFamily: "Space Grotesk",
+            fontStyle: "400",
+            lineSpacing: 10,
+            align: 'center'
+        }).setOrigin(0.5);
+
+        // 添加描述文字
+        const description = this.add.text(width / 2, 466, "Connecting Aptos Ecosystem Partners Effortlessly", {
+            fontSize: "20px",
+            color: "#999999",
+            fontFamily: "Space Grotesk",
+            fontStyle: "400",
+            lineSpacing: 10,
+            wordWrap: { width: 498 },
+            align: 'center'
+        }).setOrigin(0.5);
 
         // 移除原来的DOM元素容器（不需要了）
         // this.connectButtonContainer.destroy(); // 如果之前创建过的话
 
-        const buttonWidth = 240;
-        const buttonHeight = 60;
+        const buttonWidth = 285;
+        const buttonHeight = 72;
         const buttonX = width / 2;
         const buttonY = height * 0.6;
 
@@ -202,7 +211,7 @@ export class loginScene extends Scene {
         }
 
         // 创建圆角渐变按钮
-        const radius = 30; // 圆角半径
+        const radius = 24; // 更新圆角半径
         ctx.beginPath();
         ctx.moveTo(radius, 0);
         ctx.lineTo(buttonWidth - radius, 0);
@@ -217,11 +226,9 @@ export class loginScene extends Scene {
 
         // 创建渐变
         const grd = ctx.createLinearGradient(0, 0, buttonWidth, 0);
-        grd.addColorStop(0, '#ff69b4');    // 粉红色
-        grd.addColorStop(0.25, '#da70d6');  // 兰花紫
-        grd.addColorStop(0.5, '#9932cc');   // 深兰花紫
-        grd.addColorStop(0.75, '#8a2be2');  // 蓝紫色
-        grd.addColorStop(1, '#4285F4');     // 蓝色
+        grd.addColorStop(0, '#FF39E0');    // 更新渐变色
+        grd.addColorStop(0.5, '#AE4FFF');  // 更新渐变色
+        grd.addColorStop(1, '#30B3D4');    // 更新渐变色
         ctx.fillStyle = grd;
         ctx.fill();
 
@@ -237,19 +244,17 @@ export class loginScene extends Scene {
         buttonSprite
             .setInteractive()
             .on('pointerover', () => {
-                // 悬停时轻微放大
                 this.tweens.add({
-                    targets: [buttonSprite, this.loginText], // 同时缩放按钮和文字
-                    scaleX: 1.05,
-                    scaleY: 1.05,
+                    targets: [buttonSprite, this.loginText],
+                    scaleX: 1.02,
+                    scaleY: 1.02,
                     duration: 200,
                     ease: 'Sine.easeOut'
                 });
             })
             .on('pointerout', () => {
-                // 恢复原始大小
                 this.tweens.add({
-                    targets: [buttonSprite, this.loginText], // 同时缩放按钮和文字
+                    targets: [buttonSprite, this.loginText],
                     scaleX: 1,
                     scaleY: 1,
                     duration: 200,
@@ -260,17 +265,10 @@ export class loginScene extends Scene {
 
         // 更新按钮文字样式
         this.loginText = this.add.text(buttonX, buttonY, "Enter", {
-            fontSize: "26px",
-            color: "#ffffff",
-            fontFamily: "Arial, sans-serif",
-            fontStyle: "bold",
-            shadow: {
-                offsetX: 1,
-                offsetY: 1,
-                color: "rgba(0, 0, 0, 0.5)",
-                blur: 3,
-                fill: true
-            }
+            fontSize: "24px",
+            color: "#FFFFFF",
+            fontFamily: "Space Grotesk",
+            fontStyle: "700"
         }).setOrigin(0.5).setDepth(1);
 
         // Listen for login response
