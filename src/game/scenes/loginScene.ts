@@ -96,7 +96,7 @@ export class loginScene extends Scene {
         const fullHeight = window.innerHeight;
 
         const createGradientText = (scene: Phaser.Scene, x: number, y: number, text: string, size: string) => {
-            const fontFamily = 'sans-serif';
+            const fontFamily = 'SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif';
             const container = scene.add.container(x, y);
 
             // 分割文本
@@ -105,7 +105,7 @@ export class loginScene extends Scene {
             const style = {
                 fontSize: size,
                 fontFamily,
-                fontWeight: 'bold',
+                fontWeight: '900',
                 stroke: '#000000',
                 strokeThickness: 2
             };
@@ -118,7 +118,13 @@ export class loginScene extends Scene {
             container.add(prefixText);
 
             // 创建Mooncl渐变文本
-            const gradientColors = ['#ff69b4', '#da70d6', '#9932cc', '#8a2be2', '#4285F4']; // 粉红 -> 兰花紫 -> 深兰花紫 -> 蓝紫 -> 蓝色
+            const gradientColors = [
+                '#FF1493',  // 深粉红色 (Deep Pink)
+                '#da70d6',  // 兰花紫
+                '#9932cc',  // 深兰花紫
+                '#8a2be2',  // 蓝紫
+                '#4285F4'   // 蓝色
+            ]; // 粉红 -> 兰花紫 -> 深兰花紫 -> 蓝紫 -> 蓝色
 
             // 先创建所有字符测量总宽度
             let highlightWidth = 0;
@@ -169,11 +175,11 @@ export class loginScene extends Scene {
             // });
 
             // 添加发光效果
-            container.list.forEach((child) => {
-                if (child instanceof Phaser.GameObjects.Text) {
-                    child.setShadow(2, 2, 'rgba(100, 200, 255, 0.7)', 3, true, true);
-                }
-            });
+            // container.list.forEach((child) => {
+            //     if (child instanceof Phaser.GameObjects.Text) {
+            //         child.setShadow(2, 2, 'rgba(100, 200, 255, 0.7)', 3, true, true);
+            //     }
+            // });
 
             return container;
         };
